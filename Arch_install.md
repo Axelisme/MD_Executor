@@ -1,6 +1,7 @@
 # Arch 安裝
 
 >Arch linux 的安裝流程，含非必要的個人喜好軟體 [name=Axelisme]
+>https://github.com/Axelisme/Arch_Setup.git
 
 ## Arch 安裝I  （Live USB）
 
@@ -77,22 +78,24 @@ btrfs sub create /mnt/root/tmp
 
 ### 安裝系統
 ```bash=
-#%% {}
+#%% {"NotExec":[]}
 pacman -Syy    #更新資料庫
 #%%* {"kernel":["linux", "linux-lts", "linux-zen"]}
+#%% {"NotExec":[]}
 pacstrap /mnt/root base linux-firmware {kernel}    #安裝基礎包
-
-#%%* {"CPU":["amd", "intel"]}
+#%%* {"NotExec":[],"CPU":["amd", "intel"]}
+#%% {"NotExec":[]}
 pacstrap /mnt/root {CPU}-ucode    #安裝Intel微碼（只有Intel CPU要裝）
 #pacstrap /mnt/root amd-ucode     #安裝AMD微碼（只有AMD CPU要裝）
 ```
 
 ### 設定開機引導文件
 ```bash=
-#%% {}
+#%% {"NotExec":[]}
 genfstab -U /mnt/root >> /mnt/root/etc/fstab    #Fstab引導開機系統掛載
 
 #%% {"filesystem":"btrfs"}
+#%% {"NotExec":[]}
 #if use btrfs, then
 nano /mnt/root/etc/fstab
 #給root與home分區加上
@@ -102,7 +105,7 @@ nano /mnt/root/etc/fstab
 
 ### 改變root位置
 ```bash=
-#%% {}
+#%% {"NotExec":[]}
 arch-chroot /mnt/root          #把新裝的系統掛為root
 ```
 
