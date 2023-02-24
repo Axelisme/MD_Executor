@@ -1,17 +1,10 @@
-#%% {}
-#%%* {"kernel":["linux", "linux-lts", "linux-zen"]}
-echo 安裝基礎包
-```
-
-
-echo 'NotExec"'
-```
-
 #%% {"CPU":["intel", "amd"]}
-echo cpu
+bash
+echo $SHELL
 ```
 
 #%%* {"hostname":".+"}
+echo $SHELL
 echo "{hostname}"
 ```
 
