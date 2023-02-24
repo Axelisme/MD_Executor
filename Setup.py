@@ -55,6 +55,8 @@ def exec_file(filepath:str):
             for line in fh.readlines():
                 #print(line,end='')
                 if match_header := re.fullmatch(r'^(#%%\*?) ({.*}).*',line,re.DOTALL):
+                    os.system(command_to_run.format(**data_dict) .encode())
+                    command_to_run = ""
                     json_str = match_header.group(2)
                     condition_dict = json.loads(json_str.encode('utf-8'))
                     if check_and_load_condition(condition_dict):
