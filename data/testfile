@@ -1,0 +1,21 @@
+#%% {}
+```
+#%% {"NotExec":[]}
+echo 'NotExec"'
+```
+
+#%% {"CPU":["intel", "amd"]}
+echo cpu
+```
+
+#%%* {"hostname":".+"}
+echo "{hostname}"
+```
+
+#%% {"filesystem":"btrfs"}
+echo filesystem
+```
+
+#%%* {"hostname":".+"}
+echo "{hostname}"
+```
