@@ -1,6 +1,4 @@
 #%% {}
-echo 123
-
 #%%* {"kernel":["linux", "linux-lts", "linux-zen"]}
 echo 安裝基礎包
 ```
