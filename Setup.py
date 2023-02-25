@@ -35,7 +35,7 @@ def user_input(cond_key,cond_value):
 def check_and_load_condition(condition_dict):
     global data_dict
     for cond_key,cond_value in condition_dict.items():
-        if cond_key is not str:
+        if type(cond_key) is not str:
             raise ValueError("Unsopported type of condition key")
         if cond_key not in data_dict:
             data_dict[cond_key] = user_input(cond_key,cond_value)
@@ -92,7 +92,7 @@ def exec_file(filepath:str):
                             assert command_to_run == ""
                         command_to_run = ""
                     elif in_command_block and run_command_block:
-                        command_to_run += line
+                        command_to_run += line.format(**data_dict)
             assert not in_condition_block and not in_condition_block
             print("Reach end of file, setup completely")
     except Exception as e:
