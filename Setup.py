@@ -57,7 +57,7 @@ def exec_file(filepath:str):
         command_block_end_pattern = re.compile(r'^#%%\s*')
         in_command_block = False
         run_command_block = True
-        command_to_run = []
+        command_to_run = ""
         for line in fh.readlines():
             #print(line,end='')
             if match_condition_start := condition_block_start_pattern.fullmatch(line):
@@ -68,8 +68,7 @@ def exec_file(filepath:str):
             elif condition_block_end_pattern.fullmatch(line):
                 assert in_condition_block == True
                 in_condition_block = False
-                run_condition_block = True
-            elif run_condition_block:
+            elif not in_condition_block or run_condition_block:
                 if match_command_start := command_block_start_pattern.fullmatch(line):
                     assert in_command_block == False
                     in_command_block = True
@@ -83,10 +82,11 @@ def exec_file(filepath:str):
                     assert in_command_block == True
                     in_command_block = False
                     if run_command_block:
+                        #print(command_to_run)
                         subprocess.run(command_to_run,shell=True)
-                    command_to_run.clear()
+                    command_to_run = ""
                 elif in_command_block and run_command_block:
-                    command_to_run.append(line.format(**data_dict))
+                    command_to_run += line
         assert not in_condition_block and not in_condition_block
         print("Reach end of file, setup completely")
 
