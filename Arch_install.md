@@ -4,8 +4,7 @@
 >https://github.com/Axelisme/Arch_Setup.git
 
 <!--
-#%% {"Step":["Live USB","chroot","TTY root","TTY user","KDE user"]}
-#%%
+#%% {"Step":["Live USB","chroot","TTY root","TTY user","KDE user"]} #%%
 -->
 
 ## Arch 安裝I  （Live USB）
@@ -24,7 +23,7 @@ setfont ter-132n
 ```bash=
 #%% {}
 #確認連線狀態
-ping 8.8.8.8
+ping -c 10 8.8.8.8
 #%%
 
 #如果要連wifi
@@ -225,8 +224,7 @@ shutdown now
 
 ### 字體調大
 <!--
-#%% {"word_size": ["big", "small"]}
-#%%
+#%% {"word_size": ["big", "small"]} #%%
 -->
 ```bash=
 #%% {"word_size": "big"}
@@ -238,7 +236,7 @@ setfont ter-132n
 ```bash=
 #%% {}
 #確認連線狀態
-ping 8.8.8.8
+ping -c 10 8.8.8.8
 #%%
 
 #如果需要設定連網
@@ -313,8 +311,7 @@ pacman -S libva-mesa-driver mesa-vdpau xf86-video-amdgpu vulkan-radeon    #AMD G
 ```
 
 <!--
-#%% {"GPU":["nvidia", "amd", "intel"]}
-#%%
+#%% {"GPU":["nvidia", "amd", "intel"]} #%%
 -->
 
 ### Nvidia顯示卡(if use nvidia card)
@@ -532,8 +529,7 @@ options nvidia NVreg_UsePageAttributeTable=1
 ' | sudo tee -a /etc/modprobe.d/nvidia.conf
 #%%
 
-#%% {"GPU":"nvidia", "nvidia-power-save":["True","False"]}
-#%%
+#%% {"GPU":"nvidia", "nvidia-power-save":["True","False"]} #%%
 #%% {"GPU":"nvidia", "nvidia-power-save":"True"}
 #筆電省電用
 echo '
