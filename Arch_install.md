@@ -226,9 +226,11 @@ shutdown now
 
 
 ### 字體調大
-```bash=
+<!--
 #%% {"word_size": ["big", "small"]}
 #%%
+-->
+```bash=
 #%% {"word_size": "big"}
 setfont ter-132n
 #%%
@@ -249,7 +251,14 @@ nmtui    #進入networkmanager TUI
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
+sudo sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
+sudo sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
+sudo sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
+sudo sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
+sudo sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
+sudo sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
 nano /etc/pacman.conf
+#%%
 # misc options 下
 : '
 Color
@@ -260,7 +269,7 @@ CheckSpace
 VerbosePkgLists
 '
 # 取消註解multilib
-#%%
+
 ```
 
 ### 更新
