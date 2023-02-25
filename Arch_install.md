@@ -143,6 +143,8 @@ ln -sf /usr/share/zoneinfo/Asia/Taipei /etc/localtime    #設置時區
 hwclock --systohc                                        #同步時區
 
 # 設定系統語言
+sed -i 's/^#\?\(en_US.UTF-8 UTF-8\)/\1/1' /etc/locale.gen
+sed -i 's/^#\?\(zh_TW.UTF-8 UTF-8\)/\1/1' /etc.locale.gen
 nano /etc/locale.gen    #編輯語言庫
 # 將要啟用的語言取消註解，如en_US、zh_TW
 locale-gen              #生成語言資料
@@ -172,8 +174,8 @@ grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot
 #%%
 
 #%% {"filesystem":"btrfs"}
-systemctl enable grub-btrfsd
 pacman -S grub-btrfs inotify-tools  #Grub-btrfs
+systemctl enable grub-btrfsd
 #%%
 
 #%% {}
