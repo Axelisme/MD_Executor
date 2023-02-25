@@ -98,7 +98,7 @@ def exec_file(filepath:str):
             assert not in_condition_block and not in_condition_block
             print("Reach end of file, setup completely")
     except Exception as e:
-        print(f"{str(e)}")
+        print(f"Error: {str(e)}")
 
 #%%
 if __name__ == '__main__':
