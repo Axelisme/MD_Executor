@@ -285,7 +285,7 @@ pacman -Syyu
 ```bash=
 #%% {}
 cp /etc/makepkg.conf /etc/makepkg.conf.backup
-sed -i 's/^MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
+sed -i 's/^#\?MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
 nano /etc/makepkg.conf 
 #let MAKEFLAGS="-j$(nproc)"
 #%%
@@ -332,12 +332,12 @@ pacman -S libva-mesa-driver mesa-vdpau xf86-video-amdgpu vulkan-radeon    #AMD G
 #Check kernel config have CONFIG_DRM_SIMPLEDRM=y, linux-zen has checked
 zcat /proc/config.gz | less  
 
-#%% {"GPU":"nvidia","kernel":"linux-[^(?:lts)]","GPU-driver":[nvidia-dkms"]}
+#%% {"GPU":"nvidia","kernel":"linux-[^(?:lts)]","GPU-driver":["nvidia-dkms"]}
 pacman -S dkms               #動態模塊管理
 pacman -S nvidia-dkms        #nvidia driver
 #%%
 
-#%% {"GPU":'"nvidia","kernel":"linux","GPU-driver":["nvidia"]}
+#%% {"GPU":"nvidia","kernel":"linux","GPU-driver":["nvidia"]}
 pacman -S nvidia
 #%%
 
@@ -377,7 +377,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ### 建立一般使用者帳戶並修改密碼
 ```bash=
 #%% {"user_name": ".+"}
-useradd -m -g users -G wheel -s /bin/bash {user_name}    #創名為axel的用戶
+useradd -m -g users -G wheel -s /bin/bash {user_name}    #創名為{user_name}的用戶
 passwd {user_name}    #更改用戶axel的密碼
 #%%
 
@@ -569,7 +569,7 @@ When=PostTransaction
 NeedsTargets
 Exec=/bin/sh -c 'while read -r trg; do case $trg in {kernel}) exit 0; esac; done; /usr/bin/mkinitcpio -P {kernel}'
 " | sudo tee /etc/pacman.d/hooks/nvidia.hook
-sudo nano +6,8 /etc/pacman.d/hooks/nvidia.hook
+sudo nano /etc/pacman.d/hooks/nvidia.hook
 #%%
 ```
 
