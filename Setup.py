@@ -50,55 +50,54 @@ def check_and_load_condition(condition_dict):
 
 #%%
 def exec_file(filepath:str):
-    try:
-        with open(filepath,'r') as fh:
-            print("Start setup...")
-            global data_dict
-            data_dict = dict()
-            condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
-            condition_block_end_pattern = re.compile(r'^#<<<\s*')
-            in_condition_block:bool = False
-            run_condition_block:bool = True
-            command_block_start_pattern = re.compile(r'^#%%(\*)? ({.*})\s*')
-            command_block_end_pattern = re.compile(r'^#%%\s*')
-            in_command_block:bool = False
-            run_command_block:bool = True
-            command_to_run:str = ""
-            for line in fh.readlines():
-                #print(line,end='')
-                if match_condition_start := condition_block_start_pattern.fullmatch(line):
-                    assert in_condition_block == False
-                    in_condition_block = True
-                    condition_dict:dict = json.loads(match_condition_start.group(1).encode('utf-8'))
-                    run_condition_block = check_and_load_condition(condition_dict)
-                elif condition_block_end_pattern.fullmatch(line):
-                    assert in_condition_block == True
-                    in_condition_block = False
-                elif not in_condition_block or run_condition_block:
-                    if match_command_start := command_block_start_pattern.fullmatch(line):
-                        assert in_command_block == False
-                        in_command_block = True
-                        condition_dict:dict = json.loads(match_command_start.group(2).encode('utf-8'))
-                        if not (run_command_block := check_and_load_condition(condition_dict)):
-                            if match_command_start.group(1) == '*':
-                                raise ValueError(f"Unsupported condition:\n{data_dict}")
-                            else:
-                                print(f"Don't match the block condition:\n{condition_dict}\nIgnore this block.")
-                    elif command_block_end_pattern.fullmatch(line):
-                        assert in_command_block == True
-                        in_command_block = False
-                        if run_command_block:
-                            #print(command_to_run)
-                            subprocess.run(command_to_run,shell=True)
+    with open(filepath,'r') as fh:
+        print("Start setup...")
+        global data_dict
+        data_dict = dict()
+        condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
+        condition_block_end_pattern = re.compile(r'^#<<<\s*')
+        in_condition_block:bool = False
+        run_condition_block:bool = True
+        command_block_start_pattern = re.compile(r'^#%%(\*)? ({.*})\s*(#%%)?\s*')
+        command_block_end_pattern = re.compile(r'^#%%\s*')
+        in_command_block:bool = False
+        run_command_block:bool = True
+        command_to_run:str = ""
+        for i,line in enumerate(fh.readlines()):
+            #print(line,end='')
+            if match_condition_start := condition_block_start_pattern.fullmatch(line):
+                assert in_condition_block == False
+                in_condition_block = True
+                condition_dict:dict = json.loads(match_condition_start.group(1).encode('utf-8'))
+                run_condition_block = check_and_load_condition(condition_dict)
+            elif condition_block_end_pattern.fullmatch(line):
+                assert in_condition_block == True
+                in_condition_block = False
+            elif not in_condition_block or run_condition_block:
+                if match_command_start := command_block_start_pattern.fullmatch(line):
+                    assert in_command_block == False
+                    in_command_block = True
+                    condition_dict:dict = json.loads(match_command_start.group(2).encode('utf-8'))
+                    if not (run_command_block := check_and_load_condition(condition_dict)):
+                        if match_command_start.group(1) == '*':
+                            raise ValueError(f"Unsupported condition:\n{data_dict}")
                         else:
-                            assert command_to_run == ""
-                        command_to_run = ""
-                    elif in_command_block and run_command_block:
-                        command_to_run += line.format(**data_dict)
-            assert not in_condition_block and not in_condition_block
-            print("Reach end of file, setup completely")
-    except Exception as e:
-        print(f"Error: {str(e)}")
+                            print(f"Don't match the block condition:\n{condition_dict}\nIgnore this block.")
+                    if match_command_start.group(3) == "#%%":
+                        in_command_block = False
+                elif command_block_end_pattern.fullmatch(line):
+                    assert in_command_block == True
+                    in_command_block = False
+                    if run_command_block:
+                        #print(command_to_run)
+                        subprocess.run(command_to_run,shell=True)
+                    else:
+                        assert command_to_run == ""
+                    command_to_run = ""
+                elif in_command_block and run_command_block:
+                    command_to_run += line.format(**data_dict)
+        assert not in_condition_block and not in_condition_block
+        print("Reach end of file, setup completely")
 
 #%%
 if __name__ == '__main__':
