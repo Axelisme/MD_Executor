@@ -198,9 +198,7 @@ systemctl enable fstrim.timer      #照顧SSD硬碟
 
 ### 離開chroot
 ```bash=
-#%% {}
 exit    #離開chroot
-#%%
 ```
 
 
@@ -314,6 +312,11 @@ pacman -S libva-mesa-driver mesa-vdpau xf86-video-amdgpu vulkan-radeon    #AMD G
 #%%
 ```
 
+<!--
+#%% {"GPU":["nvidia", "amd", "intel"]}
+#%%
+-->
+
 ### Nvidia顯示卡(if use nvidia card)
 請務必詳閱:
 * https://wiki.archlinux.org/title/NVIDIA
@@ -324,27 +327,17 @@ pacman -S libva-mesa-driver mesa-vdpau xf86-video-amdgpu vulkan-radeon    #AMD G
 #Check kernel config have CONFIG_DRM_SIMPLEDRM=y, linux-zen has checked
 zcat /proc/config.gz | less  
 
-#%% {"GPU":["nvidia", "amd", "intel"]}
-#%%
-#%% {"GPU":"nvidia","kernel":"linux-[^(?:lts)]"}
+#%% {"GPU":"nvidia","kernel":"linux-[^(?:lts)]","GPU-driver":[nvidia-dkms"]}
 pacman -S dkms               #動態模塊管理
-pacman -S nvidia-dkms        #nvidia driver如果kernel用linux，nvidia-dkms改成nvidia
+pacman -S nvidia-dkms        #nvidia driver
 #%%
 
-#%% {"GPU":'"nvidia","kernel":"linux"}
+#%% {"GPU":'"nvidia","kernel":"linux","GPU-driver":["nvidia"]}
 pacman -S nvidia
 #%%
 
-#%% {"GPU":"nvidia","kernel":"linux-lts"}
+#%% {"GPU":"nvidia","kernel":"linux-lts","GPU-driver":["nvidia-lts"]}
 pacman -S nvidia-lts
-#%%
-
-#%% {"nvidia-prime":["True", "False"]}
-#%%
-#%% {"GPU":"nvidia", "nvidia-prime":"True"}
-pacman -S nvidia-prime       #筆記本切換顯卡用
-systemctl enable nvidia-persistenced.service #for nvidia prime
-#pacman -S nvidia-settings    #設定Nvidia configure
 #%%
 ```
 
@@ -531,19 +524,6 @@ btrfs_allow=noatime,space_cache,compress,compress-force,datacow,nodatacow,datasu
 
 ### nvidia 後續
 ```bash=
-#%% {"GPU":"nvidia", "nvidia-prime":"True"}
-# for nvidia-prime
-echo '
-# Enable runtime PM for NVIDIA VGA/3D controller devices on driver bind
-ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="auto"
-ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="auto"
-
-# Disable runtime PM for NVIDIA VGA/3D controller devices on driver unbind
-ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="on"
-ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="on"
-' | sudo tee -a /etc/udev/rules.d/80-nvidia-pm.rules
-#%%
-
 #%% {"GPU": "nvidia"}
 # improve performanace
 echo '
@@ -574,7 +554,7 @@ Operation=Install
 Operation=Upgrade
 Operation=Remove
 Type=Package
-Target=nvidia
+Target={GPU-driver}
 Target={kernel}
 # Change the linux part above and in the Exec line if a different kernel is used
 
@@ -583,8 +563,9 @@ Description=Update NVIDIA module in initcpio
 Depends=mkinitcpio
 When=PostTransaction
 NeedsTargets
-Exec=/bin/sh -c 'while read -r trg; do case $trg in linux) exit 0; esac; done; /usr/bin/mkinitcpio -P'
+Exec=/bin/sh -c 'while read -r trg; do case $trg in {kernel}) exit 0; esac; done; /usr/bin/mkinitcpio -P {kernel}'
 " | sudo tee /etc/pacman.d/hooks/nvidia.hook
+sudo nano +6,8 /etc/pacman.d/hooks/nvidia.hook
 #%%
 ```
 
