@@ -10,6 +10,8 @@ import json
 def user_input(cond_key,cond_value):
     if type(cond_value) is list:
         type_num:int = len(cond_value)
+        if type_num == 1:
+            return cond_value[0]
         print(f"\n\nSelect what {cond_key} you want, supported type are: ")
         print('-'*30)
         for i,name in enumerate(cond_value):
