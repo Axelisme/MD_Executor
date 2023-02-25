@@ -244,19 +244,21 @@ ping -c 10 8.8.8.8
 #%%
 
 #如果需要設定連網
+#%% {}
 nmtui    #進入networkmanager TUI
+#%%
 ```
 
 ### pacman 設定
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
-sudo sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
-sudo sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
-sudo sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
-sudo sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
-sudo sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
-sudo sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
+sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
+sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
+sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
+sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
+sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
+sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
 nano /etc/pacman.conf
 #%%
 # misc options 下
@@ -283,7 +285,7 @@ pacman -Syyu
 ```bash=
 #%% {}
 cp /etc/makepkg.conf /etc/makepkg.conf.backup
-sudo sed -i 's/^MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
+sed -i 's/^MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
 nano /etc/makepkg.conf 
 #let MAKEFLAGS="-j$(nproc)"
 #%%
@@ -291,9 +293,10 @@ nano /etc/makepkg.conf
 
 ### 重要軟體
 ```bash=
+#%%* {"kernel":["linux", "linux-lts", "linux-zen"]} #%%
 #%% {}
 pacman -S sudo                         # 管理者權限
-pacman -S linux-zen-headers base-devel #linux標頭檔、編譯基礎工具
+pacman -S {kernel}-headers base-devel  #linux標頭檔、編譯基礎工具
 pacman -S mesa                         #顯卡渲染驅動（intel & AMD）
 pacman -S lm_sensors                   #設備狀況監控
 pacman -S git openssh man              #開發工具（git、ssh通訊協定、man顯示指令說明）
@@ -303,9 +306,10 @@ pacman -S python python-pip            #Python相關
 pacman -S wget                         #其他
 pacman -S alsa-utils pipewire pipewire-pulse pipewire-alsa pipewire-jack #音效
 #pacman -S spice-vdagent               #虛擬機Guest用
-# systemctl enable sshd                  #啟動ssh伺服器
+#systemctl enable sshd                 #啟動ssh伺服器
 #%%
 
+#%%* {"CPU":["amd", "intel"]} #%%
 #%% {"CPU":"intel"}
 pacman -S intel-media-driver vulkan-intel    #Intel GPU硬件視頻加速、3D渲染加速（只適用Intel）
 #%%
