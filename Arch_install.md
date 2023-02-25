@@ -102,7 +102,7 @@ pacstrap /mnt/root {CPU}-ucode    #安裝Intel微碼（只有Intel CPU要裝）
 genfstab -U /mnt/root >> /mnt/root/etc/fstab    #Fstab引導開機系統掛載
 #%%
 
-#%% {"filesystem":"btrfs"}
+#%% {"filesystem":["btrfs"]}
 #if use btrfs, then
 nano /mnt/root/etc/fstab
 #給root與home分區加上
@@ -148,6 +148,8 @@ sed -i 's/^#\?\(zh_TW.UTF-8 UTF-8\)/\1/1' /etc.locale.gen
 nano /etc/locale.gen    #編輯語言庫
 # 將要啟用的語言取消註解，如en_US、zh_TW
 locale-gen              #生成語言資料
+echo '
+LANG=en_US.UTF-8' | tee -a /etc/locale.conf
 nano /etc/locale.conf    
 # 添加
 # LANG=en_US.UTF-8
