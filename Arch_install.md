@@ -102,7 +102,7 @@ pacstrap /mnt/root {CPU}-ucode    #安裝Intel微碼（只有Intel CPU要裝）
 genfstab -U /mnt/root >> /mnt/root/etc/fstab    #Fstab引導開機系統掛載
 #%%
 
-#%% {"filesystem":"btrfs"}
+#%% {"filesystem":["btrfs"]}
 #if use btrfs, then
 nano /mnt/root/etc/fstab
 #給root與home分區加上
@@ -143,9 +143,13 @@ ln -sf /usr/share/zoneinfo/Asia/Taipei /etc/localtime    #設置時區
 hwclock --systohc                                        #同步時區
 
 # 設定系統語言
+sed -i 's/^#\?\(en_US.UTF-8 UTF-8\)/\1/1' /etc/locale.gen
+sed -i 's/^#\?\(zh_TW.UTF-8 UTF-8\)/\1/1' /etc.locale.gen
 nano /etc/locale.gen    #編輯語言庫
 # 將要啟用的語言取消註解，如en_US、zh_TW
 locale-gen              #生成語言資料
+echo '
+LANG=en_US.UTF-8' | tee -a /etc/locale.conf
 nano /etc/locale.conf    
 # 添加
 # LANG=en_US.UTF-8
@@ -172,8 +176,8 @@ grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot
 #%%
 
 #%% {"filesystem":"btrfs"}
-systemctl enable grub-btrfsd
 pacman -S grub-btrfs inotify-tools  #Grub-btrfs
+systemctl enable grub-btrfsd
 #%%
 
 #%% {}
@@ -240,19 +244,21 @@ ping -c 10 8.8.8.8
 #%%
 
 #如果需要設定連網
+#%% {}
 nmtui    #進入networkmanager TUI
+#%%
 ```
 
 ### pacman 設定
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
-sudo sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
-sudo sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
-sudo sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
-sudo sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
-sudo sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
-sudo sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
+sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
+sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
+sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
+sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
+sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
+sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
 nano /etc/pacman.conf
 #%%
 # misc options 下
@@ -279,7 +285,7 @@ pacman -Syyu
 ```bash=
 #%% {}
 cp /etc/makepkg.conf /etc/makepkg.conf.backup
-sudo sed -i 's/^MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
+sed -i 's/^MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
 nano /etc/makepkg.conf 
 #let MAKEFLAGS="-j$(nproc)"
 #%%
@@ -287,9 +293,10 @@ nano /etc/makepkg.conf
 
 ### 重要軟體
 ```bash=
+#%%* {"kernel":["linux", "linux-lts", "linux-zen"]} #%%
 #%% {}
 pacman -S sudo                         # 管理者權限
-pacman -S linux-zen-headers base-devel #linux標頭檔、編譯基礎工具
+pacman -S {kernel}-headers base-devel  #linux標頭檔、編譯基礎工具
 pacman -S mesa                         #顯卡渲染驅動（intel & AMD）
 pacman -S lm_sensors                   #設備狀況監控
 pacman -S git openssh man              #開發工具（git、ssh通訊協定、man顯示指令說明）
@@ -299,9 +306,10 @@ pacman -S python python-pip            #Python相關
 pacman -S wget                         #其他
 pacman -S alsa-utils pipewire pipewire-pulse pipewire-alsa pipewire-jack #音效
 #pacman -S spice-vdagent               #虛擬機Guest用
-# systemctl enable sshd                  #啟動ssh伺服器
+#systemctl enable sshd                 #啟動ssh伺服器
 #%%
 
+#%%* {"CPU":["amd", "intel"]} #%%
 #%% {"CPU":"intel"}
 pacman -S intel-media-driver vulkan-intel    #Intel GPU硬件視頻加速、3D渲染加速（只適用Intel）
 #%%
