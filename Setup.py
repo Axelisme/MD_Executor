@@ -53,7 +53,6 @@ def exec_file(filepath:str):
     with open(filepath,'r') as fh:
         print("Start setup...")
         global data_dict
-        data_dict = dict()
         condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
         condition_block_end_pattern = re.compile(r'^#<<<\s*')
         in_condition_block:bool = False
@@ -101,11 +100,25 @@ def exec_file(filepath:str):
 
 #%%
 if __name__ == '__main__':
+    file_path = ""
     argv_num:int = len(sys.argv)
     if argv_num <= 1:
         print("No file provide, use default file path")
-        exec_file("data/testfile")
+        file_path = "data/testfile"
     elif argv_num > 2:
         print("Too many file provide")
+        exit(0)
     else :
-        exec_file(sys.argv[1])
+        file_path = sys.argv[1]
+    
+    global data_dict
+    try:
+        with open("data/data_dict.json","r") as fh:
+            data_dict = json.loads(fh.read())
+    except FileNotFoundError:
+        open("data/data_dict.json","x").close()
+        data_dict = dict()
+    exec_file(file_path)
+    with open("data/data_dict.json","w") as fh:
+        json.dump(data_dict,fh,indent=2)
+
