@@ -69,7 +69,7 @@ def user_input(cond_key,cond_value):
 #%% handle how to check an load condition 
 def check_and_load_condition(condition_dict,data_dict):
     for cond_key,cond_value in condition_dict.items():
-        if type(cond_key) is not str:
+        if not isinstance(cond_key,str):
             raise ValueError("Unsopported type of condition key")
         if cond_key not in data_dict:
             data_dict[cond_key] = user_input(cond_key,cond_value)
