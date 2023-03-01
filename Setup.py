@@ -111,14 +111,20 @@ if __name__ == '__main__':
     else :
         file_path = sys.argv[1]
     
+    #Load dictionary
+    dict_path = "data/data_dict.json"
     global data_dict
     try:
-        with open("data/data_dict.json","r") as fh:
+        with open(dict_path,"r") as fh:
             data_dict = json.loads(fh.read())
     except FileNotFoundError:
-        open("data/data_dict.json","x").close()
+        open(dict_path,"x").close()
         data_dict = dict()
+    
+    #execute file
     exec_file(file_path)
-    with open("data/data_dict.json","w") as fh:
+
+    #Wrinte dictionary into file
+    with open(dict_path,"w") as fh:
         json.dump(data_dict,fh,indent=2)
 
