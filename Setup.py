@@ -36,7 +36,7 @@ class CommandBlock():
                 print(formatted_command,end='')
                 print("<"*50)
                 input("(Enter to run) ")          
-            subprocess.run(formatted_command,shell=True)
+            subprocess.run(formatted_command,shell=True,check=True).check_returncode()
 
 #%% handle how to interact with user
 def user_input(cond_key,cond_value):
