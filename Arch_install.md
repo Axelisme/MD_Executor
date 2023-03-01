@@ -51,12 +51,12 @@ timedatectl set-ntp true
 #%% {} 
 lsblk
 #%%
-#%%%* {"Name_of_disk1":".+","Name_of_disk2":".*"} #%%
+#%%* {"Name_of_disk1":".+","Name_of_disk2":".*"} #%%
 -->
 ```bash=
 lsblk    #顯示磁碟分區狀態
 
-#%%%@* {"Name_of_disk1":".+"}
+#%%@* {"Name_of_disk1":".+"}
 gdisk /dev/{Name_of_disk1}    #進入磁碟
 #%%
 x    #專家模式
@@ -67,10 +67,10 @@ cfdisk /dev/{Name_of_disk1}    #圖形化分割磁碟
 ```
 <!--
 #>>> {"Name_of_disk2":".+"}
-#%%%@ {}
+#%%@ {}
 gdisk /dev/{Name_of_disk2}    #進入磁碟
 #%%
-#%%%@ {}
+#%%@ {}
 cfdisk /dev/{Name_of_disk2}    #圖形化分割磁碟
 #%%
 #<<<
@@ -90,12 +90,12 @@ lsblk
 mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
-#%%@* {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
+#%%@ {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
 mkfs.btrfs /dev/{root_partition}    #格式化root分區成btrfs
 mkfs.btrfs /dev/{home_partition}    #格式化home分區成btrfs
 #%%
 or
-#%%@* {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
+#%%@ {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
 mkfs.ext4 /dev/{root_partition}    #格式化root分區成ext4
 mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 #%%
@@ -103,6 +103,8 @@ mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 
 ### 掛載磁碟分區(use btrfs)
 <!--
+#>>> {"filesystem":["btrfs","ext4"]} 
+#<<<
 #>>> {"filesystem":"btrfs"}
 -->
 ```bash=
@@ -143,6 +145,8 @@ swapon /dev/{swap_partition}    #掛載swap分區
 
 ### 掛載磁碟分區(use ext4)
 <!--
+#>>> {"filesystem":["btrfs","ext4"]} 
+#<<<
 #>>> {"filesystem":"ext4"}
 -->
 ```bash=
