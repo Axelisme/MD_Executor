@@ -87,8 +87,11 @@ def exec_file(filepath:str,data_dict=dict()):
         for i,line in enumerate(fh.readlines()):
             #print(line,end='')
             if match_condition_start := condition_block_start_pattern.fullmatch(line):
-                condition_dict:dict = json.loads(match_condition_start.group(1).encode('utf-8'))
-                condition_block_stack.append(check_and_load_condition(condition_dict,data_dict))
+                if not condition_block_stack or all(condition_block_stack):
+                    condition_dict:dict = json.loads(match_condition_start.group(1).encode('utf-8'))
+                    condition_block_stack.append(check_and_load_condition(condition_dict,data_dict))
+                else:
+                    condition_block_stack.append(False)
             elif condition_block_end_pattern.fullmatch(line):
                 condition_block_stack.pop()
             elif not condition_block_stack or all(condition_block_stack):
