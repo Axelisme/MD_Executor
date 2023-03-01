@@ -79,7 +79,7 @@ def check_and_load_condition(condition_dict,data_dict):
 
 #%% load file and execute it
 def exec_file(filepath:str,data_dict=dict()):
-    not_store_list = []
+    not_store_set = set()
     with open(filepath,'r') as fh:
         print("Start setup...")
         condition_block_stack = []
@@ -107,7 +107,7 @@ def exec_file(filepath:str,data_dict=dict()):
                         else:
                             print(f"Doesn't match the block condition:\n{condition_dict}\nIgnore this block.")
                     if '%' in post_parameters:
-                        not_store_list.extend(condition_dict.keys())
+                        not_store_set.update(condition_dict.keys())
                     if '@' in post_parameters:
                         command_block.wait_flag = True
                     if is_one_line_block:
@@ -123,7 +123,7 @@ def exec_file(filepath:str,data_dict=dict()):
         assert not condition_block_stack and not command_block
         print("Reach end of file, setup completely")
     store_dict = data_dict.copy()
-    for key in not_store_list:
+    for key in not_store_set:
         del store_dict[key]
     return store_dict
 
