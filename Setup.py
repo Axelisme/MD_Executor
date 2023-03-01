@@ -59,10 +59,7 @@ def user_input(cond_key,cond_value):
         else:
             return cond_value[int(user_respond)]
     elif type(cond_value) is str:
-        user_respond:str = input(f"What is your {cond_key}: ")
-        while not user_respond:
-            user_respond = input(f"Empty input, type again: ")
-        return user_respond
+        return input(f"What is your {cond_key}: ")
     else:
         raise ValueError("Unsupported type of condition value")
 
