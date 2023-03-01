@@ -103,7 +103,7 @@ def exec_file(filepath:str,data_dict=dict()):
                     
                     if not command_block.run_flag:
                         if '*' in post_parameters:
-                            raise ValueError(f"Unsupported condition:\n{data_dict}")
+                            raise ValueError(f"Unsupported given condition:\n{data_dict}")
                         else:
                             print(f"Doesn't match the block condition:\n{condition_dict}\nIgnore this block.")
                     if '%' in post_parameters:
