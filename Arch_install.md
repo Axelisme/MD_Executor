@@ -4,7 +4,7 @@
 >https://github.com/Axelisme/Arch_Setup.git
 
 <!--
-#%% {"Step":["Live USB","chroot","TTY root","TTY user","KDE user"]} #%%
+#%%% {"Step":["Live USB","chroot","TTY root","TTY user","KDE user"]} #%%
 -->
 
 ## Arch 安裝I  （Live USB）
@@ -42,45 +42,116 @@ timedatectl set-ntp true
 #%%
 ```
 
+<!--
+#%%% {"Already_partitioned_and_mount":["True","False"]} #%%
+#>>> {"Already_partitioned_and_mount":"False"}
+-->
 ### 劃分磁碟分區
 ```bash=
+#%% {}
 lsblk    #顯示磁碟分區狀態
-gdisk /dev/the_disk_to_be_partitioned    #進入磁碟the_disk_to_be_partitioned
+df -h
+#%%
+#%%% {"Name_of_disk":".+"}
+gdisk /dev/{Name of disk}    #進入磁碟the_disk_to_be_partitioned
+#%%
 x    #專家模式
 z    #刪除所有分區
-cfdisk /dev/the_disk_to_be_partitioned    #圖形化分割磁碟the_disk_to_be_partitioned
+#%%@ {}
+cfdisk /dev/{Name of disk}    #圖形化分割磁碟the_disk_to_be_partitioned
+#%%
 ```
 
 ### 格式化磁碟分區
+<!--
+#%% {}
+lsblk
+df -h
+#%%
+#%%* {"efi_partition":".+","swap_partition":".+"} #%%
+#%%* {"root_partition":".+","home_partition":".+"} #%%
+#%%* {"filesystem":["btrfs","ext4"]} #%%
+-->
 ```bash=
-mkfs.fat -F 32 /dev/efi_system_partition    #EFI分區格式化成Fat32
-mkswap /dev/swap_partition    #格式化swap
-mkfs.btrfs /dev/root_partition    #格式化root分區成btrfs(也可以用ext4)
-mkfs.btrfs /dev/home_partition    #格式化home分區成btrfs(也可以用ext4)
+#%%@ {"efi_partition":".+","swap_partition":".+"}
+mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
+mkswap /dev/{swap_partition}    #格式化swap
+#%%
+#%%@ {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
+mkfs.btrfs /dev/{root_partition}    #格式化root分區成btrfs
+mkfs.btrfs /dev/{home_partition}    #格式化home分區成btrfs
+#%%
+or
+#%%@ {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
+mkfs.ext4 /dev/{root_partition}    #格式化root分區成ext4
+mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
+#%%
 ```
 
 ### 掛載磁碟分區(use btrfs)
+<!--
+#>>> {"filesystem":"btrfs"}
+-->
 ```bash=
+#%% {}
 #創建資料夾
 mkdir /mnt/btrfs_root
 mkdir /mnt/btrfs_home
 mkdir /mnt/root
+#%%
+#%%@ {}
 #掛載btrfs磁碟到/mnt/btrfs_xx
-mount /dev/root_partition /mnt/btrfs_root
-mount /dev/home_partition /mnt/btrfs_home
+mount /dev/{root_partition} /mnt/btrfs_root
+mount /dev/{home_partition} /mnt/btrfs_home
+#%%
+#%%@ {}
 #建立子捲
 btrfs subvolume create /mnt/btrfs_root/@
 btrfs subvolume create /mnt/btrfs_home/@home
+#%%
+#%%@ {}
 #掛載
-mount /dev/root_partition -o subvol=@ /mnt/root
+mount /dev/{root_partition} -o subvol=@ /mnt/root
 mkdir /mnt/root/boot
 mkdir /mnt/root/home
-mount /dev/efi_system_partition /mnt/root/boot    #EFI分區掛載到/mnt/boot
-mount /dev/home_partition -o subvol=@home /mnt/root/home
-swapon /dev/swap_partition    #掛載swap分區
+mount /dev/{efi_partition} /mnt/root/boot    #EFI分區掛載到/mnt/boot
+mount /dev/{home_partition} -o subvol=@home /mnt/root/home
+swapon /dev/{swap_partition}    #掛載swap分區
+#%%
 #為不想備份到的部份建立子捲
-btrfs sub create /mnt/root/tmp
+#btrfs sub create /mnt/root/tmp
 ```
+<!--
+#<<<
+-->
+
+### 掛載磁碟分區(use ext4)
+<!--
+#>>> {"filesystem":"ext4"}
+-->
+```bash=
+#%%@ {}
+#創建資料夾
+mkdir /mnt/root
+#掛載
+mount /dev/{root_partition} -o subvol=@ /mnt/root
+#%%
+#%%@ {}
+mkdir /mnt/root/boot
+mkdir /mnt/root/home
+mount /dev/{efi_partition} /mnt/root/boot    #EFI分區掛載到/mnt/boot
+mount /dev/{home_partition} /mnt/root/home
+swapon /dev/{swap_partition}    #掛載swap分區
+#%%
+```
+<!--
+#<<<
+-->
+
+<!--
+#<<<
+-->
+
 
 ### 安裝系統
 ```bash=
@@ -91,8 +162,9 @@ pacman -Syy    #更新資料庫
 pacstrap /mnt/root base linux-firmware {kernel}    #安裝基礎包
 #%%
 #%%* {"CPU":["amd", "intel"]}
-pacstrap /mnt/root {CPU}-ucode    #安裝Intel微碼（只有Intel CPU要裝）
-#pacstrap /mnt/root amd-ucode     #安裝AMD微碼（只有AMD CPU要裝）
+pacstrap /mnt/root {CPU}-ucode   #安裝微碼
+#pacstrap /mnt/root intel-ucode  #安裝Intel微碼（只有Intel CPU要裝）
+#pacstrap /mnt/root amd-ucode    #安裝AMD微碼（只有AMD CPU要裝）
 #%%
 ```
 
@@ -102,7 +174,7 @@ pacstrap /mnt/root {CPU}-ucode    #安裝Intel微碼（只有Intel CPU要裝）
 genfstab -U /mnt/root >> /mnt/root/etc/fstab    #Fstab引導開機系統掛載
 #%%
 
-#%% {"filesystem":["btrfs"]}
+#%% {}
 #if use btrfs, then
 nano /mnt/root/etc/fstab
 #給root與home分區加上
@@ -144,7 +216,7 @@ hwclock --systohc                                        #同步時區
 
 # 設定系統語言
 sed -i 's/^#\?\(en_US.UTF-8 UTF-8\)/\1/1' /etc/locale.gen
-sed -i 's/^#\?\(zh_TW.UTF-8 UTF-8\)/\1/1' /etc.locale.gen
+sed -i 's/^#\?\(zh_TW.UTF-8 UTF-8\)/\1/1' /etc/locale.gen
 nano /etc/locale.gen    #編輯語言庫
 # 將要啟用的語言取消註解，如en_US、zh_TW
 locale-gen              #生成語言資料
@@ -413,7 +485,7 @@ sudo pacman -S kde-applications       #kde 搭配軟體
 | 編號 | 名稱             | 推薦度（🡫） | 描述                        |
 | ---- | ---------------- | ------------ | --------------------------- |
 | 5    | ark              | 1            | 壓縮軟體                    |
-| 13   | color-kde        | 0            | 桌面色彩管理                |
+| 13   | color-kde        | 1            | 桌面色彩管理                |
 | 14   | dolphin          | 1            | 檔案管理                    |
 | 15   | dolphin-plugins  | 1            | dolphin插件                 |
 | 17   | elisa            | 2            | 音樂專輯播放器              |
