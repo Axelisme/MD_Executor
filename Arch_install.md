@@ -50,43 +50,36 @@ timedatectl set-ntp true
 <!--
 #%% {} 
 lsblk
-df -h
 #%%
 #%%%* {"Name_of_disk1":".+","Name_of_disk2":".*"} #%%
 -->
 ```bash=
-#%%* {"Name_of_disk1":".+"}
 lsblk    #顯示磁碟分區狀態
-df -h
-#%%
 
 #%%%@* {"Name_of_disk1":".+"}
-gdisk /dev/{Name of disk1}    #進入磁碟
+gdisk /dev/{Name_of_disk1}    #進入磁碟
 #%%
 x    #專家模式
 z    #刪除所有分區
 #%%@* {"Name_of_disk1":".+"}
-cfdisk /dev/{Name of disk1}    #圖形化分割磁碟
+cfdisk /dev/{Name_of_disk1}    #圖形化分割磁碟
 #%%
 ```
 <!--
-#%% {"Name_of_disk2":".+"}
-lsblk    #顯示磁碟分區狀態
-df -h
+#>>> {"Name_of_disk2":".+"}
+#%%%@ {}
+gdisk /dev/{Name_of_disk2}    #進入磁碟
 #%%
-#%%%@ {"Name_of_disk2":".+"}
-gdisk /dev/{Name of disk2}    #進入磁碟
+#%%%@ {}
+cfdisk /dev/{Name_of_disk2}    #圖形化分割磁碟
 #%%
-#%%%@ {"Name_of_disk2":".+"}
-cfdisk /dev/{Name of disk1}    #圖形化分割磁碟
-#%%
+#<<<
 -->
 
 ### 格式化磁碟分區
 <!--
 #%% {}
 lsblk
-df -h
 #%%
 #%%* {"efi_partition":".+","swap_partition":".+"} #%%
 #%%* {"root_partition":".+","home_partition":".+"} #%%
@@ -118,6 +111,9 @@ mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 mkdir /mnt/btrfs_root
 mkdir /mnt/btrfs_home
 mkdir /mnt/root
+#%%
+#%% {}
+lsblk
 #%%
 #%%@ {}
 #掛載btrfs磁碟到/mnt/btrfs_xx
@@ -153,8 +149,11 @@ swapon /dev/{swap_partition}    #掛載swap分區
 #%%@ {}
 #創建資料夾
 mkdir /mnt/root
+#%% {}
+df -h
+#%%
 #掛載
-mount /dev/{root_partition} -o subvol=@ /mnt/root
+mount /dev/{root_partition} /mnt/root
 #%%
 #%%@ {}
 mkdir /mnt/root/boot
@@ -169,13 +168,18 @@ swapon /dev/{swap_partition}    #掛載swap分區
 -->
 
 <!--
+#%% {} 
+df -h
+#%%
+#%%@ {} 
+#%%
 #<<<
 -->
 
 
 ### 安裝系統
 ```bash=
-#%% {}
+#%%@ {}
 pacman -Syy    #更新資料庫
 #%%
 #%%@* {"kernel":["linux", "linux-lts", "linux-zen"]}
