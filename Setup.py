@@ -126,5 +126,6 @@ if __name__ == '__main__':
 
     #Wrinte dictionary into file
     with open(dict_path,"w") as fh:
+        data_dict.pop("Step",None)
         json.dump(data_dict,fh,indent=2)
 
