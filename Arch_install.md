@@ -43,24 +43,44 @@ timedatectl set-ntp true
 ```
 
 <!--
-#%%% {"Already_partitioned_and_mount":["True","False"]} #%%
+#%%%* {"Already_partitioned_and_mount":["True","False"]} #%%
 #>>> {"Already_partitioned_and_mount":"False"}
 -->
 ### 劃分磁碟分區
+<!--
+#%% {} 
+lsblk
+df -h
+#%%
+#%%%* {"Name_of_disk1":".+","Name_of_disk2":".*"} #%%
+-->
 ```bash=
-#%% {}
+#%%* {"Name_of_disk1":".+"}
 lsblk    #顯示磁碟分區狀態
 df -h
 #%%
-#%%% {"Name_of_disk":".+"}
-gdisk /dev/{Name of disk}    #進入磁碟the_disk_to_be_partitioned
+
+#%%%@* {"Name_of_disk1":".+"}
+gdisk /dev/{Name of disk1}    #進入磁碟
 #%%
 x    #專家模式
 z    #刪除所有分區
-#%%@ {}
-cfdisk /dev/{Name of disk}    #圖形化分割磁碟the_disk_to_be_partitioned
+#%%@* {"Name_of_disk1":".+"}
+cfdisk /dev/{Name of disk1}    #圖形化分割磁碟
 #%%
 ```
+<!--
+#%% {"Name_of_disk2":".+"}
+lsblk    #顯示磁碟分區狀態
+df -h
+#%%
+#%%%@ {"Name_of_disk2":".+"}
+gdisk /dev/{Name of disk2}    #進入磁碟
+#%%
+#%%%@ {"Name_of_disk2":".+"}
+cfdisk /dev/{Name of disk1}    #圖形化分割磁碟
+#%%
+-->
 
 ### 格式化磁碟分區
 <!--
@@ -73,16 +93,16 @@ df -h
 #%%* {"filesystem":["btrfs","ext4"]} #%%
 -->
 ```bash=
-#%%@ {"efi_partition":".+","swap_partition":".+"}
+#%%@* {"efi_partition":".+","swap_partition":".+"}
 mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
-#%%@ {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
+#%%@* {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
 mkfs.btrfs /dev/{root_partition}    #格式化root分區成btrfs
 mkfs.btrfs /dev/{home_partition}    #格式化home分區成btrfs
 #%%
 or
-#%%@ {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
+#%%@* {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
 mkfs.ext4 /dev/{root_partition}    #格式化root分區成ext4
 mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 #%%
@@ -93,7 +113,7 @@ mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 #>>> {"filesystem":"btrfs"}
 -->
 ```bash=
-#%% {}
+#%%@ {}
 #創建資料夾
 mkdir /mnt/btrfs_root
 mkdir /mnt/btrfs_home
@@ -158,10 +178,10 @@ swapon /dev/{swap_partition}    #掛載swap分區
 #%% {}
 pacman -Syy    #更新資料庫
 #%%
-#%%* {"kernel":["linux", "linux-lts", "linux-zen"]}
+#%%@* {"kernel":["linux", "linux-lts", "linux-zen"]}
 pacstrap /mnt/root base linux-firmware {kernel}    #安裝基礎包
 #%%
-#%%* {"CPU":["amd", "intel"]}
+#%%@* {"CPU":["amd", "intel"]}
 pacstrap /mnt/root {CPU}-ucode   #安裝微碼
 #pacstrap /mnt/root intel-ucode  #安裝Intel微碼（只有Intel CPU要裝）
 #pacstrap /mnt/root amd-ucode    #安裝AMD微碼（只有AMD CPU要裝）
@@ -170,7 +190,7 @@ pacstrap /mnt/root {CPU}-ucode   #安裝微碼
 
 ### 設定開機引導文件
 ```bash=
-#%% {}
+#%%@ {}
 genfstab -U /mnt/root >> /mnt/root/etc/fstab    #Fstab引導開機系統掛載
 #%%
 
