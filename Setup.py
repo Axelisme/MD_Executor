@@ -1,12 +1,12 @@
 #! /usr/bin/python3
 
-#%%
+#%% import modules
 import sys
 import subprocess
 import re
 import json
 
-#%%
+#%% handle how to interact with user
 def user_input(cond_key,cond_value):
     if type(cond_value) is list:
         type_num:int = len(cond_value)
@@ -34,7 +34,8 @@ def user_input(cond_key,cond_value):
     else:
         raise ValueError("Unsupported type of condition value")
 
-#%%
+
+#%% handle how to check an load condition 
 def check_and_load_condition(condition_dict,data_dict):
     for cond_key,cond_value in condition_dict.items():
         if type(cond_key) is not str:
@@ -48,13 +49,15 @@ def check_and_load_condition(condition_dict,data_dict):
             return False
     return True
 
-#%%
+
+#%% define the regular expression pattern
 condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
 condition_block_end_pattern = re.compile(r'^#<<<\s*')
 command_block_start_pattern = re.compile(r'^#%%(.*) ({.*})\s*(#%%)?\s*')
 command_block_end_pattern = re.compile(r'^#%%\s*')
 
-#%%
+
+#%% load file and execute it
 def exec_file(filepath:str,data_dict=dict()):
     with open(filepath,'r') as fh:
         print("Start setup...")
@@ -107,7 +110,8 @@ def exec_file(filepath:str,data_dict=dict()):
         del store_dict[key]
     return store_dict
 
-#%%
+
+#%% main function
 if __name__ == '__main__':
     file_path:str = ""
     argv_num:int = len(sys.argv)
