@@ -22,7 +22,8 @@ def user_input(cond_key,cond_value):
             user_respond = '0'
         while not user_respond.isdigit() or int(user_respond) not in range(0,type_num):
             user_respond = input(f"Unknown input, please enter again: ")
-            user_respond = user_respond if user_respond else '0'
+            if not user_respond:
+                user_respond = '0'
         else:
             return cond_value[int(user_respond)]
     elif type(cond_value) is str:
@@ -34,8 +35,7 @@ def user_input(cond_key,cond_value):
         raise ValueError("Unsupported type of condition value")
 
 #%%
-def check_and_load_condition(condition_dict):
-    global data_dict
+def check_and_load_condition(condition_dict,data_dict):
     for cond_key,cond_value in condition_dict.items():
         if type(cond_key) is not str:
             raise ValueError("Unsopported type of condition key")
@@ -49,16 +49,18 @@ def check_and_load_condition(condition_dict):
     return True
 
 #%%
-def exec_file(filepath:str):
+condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
+condition_block_end_pattern = re.compile(r'^#<<<\s*')
+command_block_start_pattern = re.compile(r'^#%%(.*) ({.*})\s*(#%%)?\s*')
+command_block_end_pattern = re.compile(r'^#%%\s*')
+
+#%%
+def exec_file(filepath:str,data_dict=dict()):
     with open(filepath,'r') as fh:
         print("Start setup...")
-        global data_dict
-        condition_block_start_pattern = re.compile(r'^#>>> ({.*})\s*')
-        condition_block_end_pattern = re.compile(r'^#<<<\s*')
+        not_store_list = []
         in_condition_block:bool = False
         run_condition_block:bool = True
-        command_block_start_pattern = re.compile(r'^#%%(\*)? ({.*})\s*(#%%)?\s*')
-        command_block_end_pattern = re.compile(r'^#%%\s*')
         in_command_block:bool = False
         run_command_block:bool = True
         command_to_run:str = ""
@@ -68,7 +70,7 @@ def exec_file(filepath:str):
                 assert in_condition_block == False
                 in_condition_block = True
                 condition_dict:dict = json.loads(match_condition_start.group(1).encode('utf-8'))
-                run_condition_block = check_and_load_condition(condition_dict)
+                run_condition_block = check_and_load_condition(condition_dict,data_dict)
             elif condition_block_end_pattern.fullmatch(line):
                 assert in_condition_block == True
                 in_condition_block = False
@@ -77,11 +79,14 @@ def exec_file(filepath:str):
                     assert in_command_block == False
                     in_command_block = True
                     condition_dict:dict = json.loads(match_command_start.group(2).encode('utf-8'))
-                    if not (run_command_block := check_and_load_condition(condition_dict)):
-                        if match_command_start.group(1) == '*':
+                    run_command_block = check_and_load_condition(condition_dict,data_dict)
+                    if post_flag := match_command_start.group(1):
+                        if '*' in post_flag and not run_command_block:
                             raise ValueError(f"Unsupported condition:\n{data_dict}")
-                        else:
-                            print(f"Don't match the block condition:\n{condition_dict}\nIgnore this block.")
+                        if '%' in post_flag:
+                            not_store_list.extend(condition_dict.keys())
+                    elif not run_command_block:
+                        print(f"Don't match the block condition:\n{condition_dict}\nIgnore this block.")
                     if match_command_start.group(3) == "#%%":
                         in_command_block = False
                 elif command_block_end_pattern.fullmatch(line):
@@ -97,10 +102,14 @@ def exec_file(filepath:str):
                     command_to_run += line.format(**data_dict)
         assert not in_condition_block and not in_condition_block
         print("Reach end of file, setup completely")
+    store_dict = data_dict.copy()
+    for key in not_store_list:
+        del store_dict[key]
+    return store_dict
 
 #%%
 if __name__ == '__main__':
-    file_path = ""
+    file_path:str = ""
     argv_num:int = len(sys.argv)
     if argv_num <= 1:
         print("No file provide, use default file path")
@@ -112,20 +121,18 @@ if __name__ == '__main__':
         file_path = sys.argv[1]
     
     #Load dictionary
-    dict_path = "data/data_dict.json"
-    global data_dict
+    dict_path:str = "data/data_dict.json"
+    store_dict:dict = dict()
     try:
         with open(dict_path,"r") as fh:
-            data_dict = json.loads(fh.read())
-    except FileNotFoundError:
-        open(dict_path,"x").close()
-        data_dict = dict()
+            store_dict = json.load(fh)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        pass
     
-    #execute file
-    exec_file(file_path)
+    #Execute file
+    store_dict = exec_file(file_path,store_dict)
 
-    #Wrinte dictionary into file
+    #Write dictionary into file
     with open(dict_path,"w") as fh:
-        data_dict.pop("Step",None)
-        json.dump(data_dict,fh,indent=2)
+        json.dump(store_dict,fh,indent=2)
 
