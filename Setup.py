@@ -40,7 +40,7 @@ class CommandBlock():
 
 #%% handle how to interact with user
 def user_input(cond_key,cond_value):
-    if type(cond_value) is list:
+    if isinstance(cond_value,list):
         type_num:int = len(cond_value)
         if type_num == 1:
             return cond_value[0]
@@ -73,7 +73,7 @@ def check_and_load_condition(condition_dict,data_dict):
             raise ValueError("Unsopported type of condition key")
         if cond_key not in data_dict:
             data_dict[cond_key] = user_input(cond_key,cond_value)
-        if type(cond_value) is list:
+        if isinstance(cond_value,list):
             if not any(re.fullmatch(cond_value_i,data_dict[cond_key]) for cond_value_i in cond_value):
                 return False
         elif not re.fullmatch(cond_value,data_dict[cond_key]):
@@ -132,16 +132,11 @@ def exec_file(filepath:str,data_dict=dict()):
 
 #%% main function
 if __name__ == '__main__':
-    file_path:str = ""
-    argv_num:int = len(argv)
-    if argv_num <= 1:
+    if len(argv) > 1:
+        file_path:str = argv[1]
+    else:
         print("No file provide, use default file path")
-        file_path = "data/testfile"
-    elif argv_num > 2:
-        print("Too many file provide")
-        exit(0)
-    else :
-        file_path = argv[1]
+        file_path:str = "data/testfile"
     
     #Load dictionary
     dict_path:str = "data/data_dict.json"
