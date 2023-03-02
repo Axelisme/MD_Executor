@@ -8,7 +8,7 @@ from sys import argv
 from typing import Optional
 
 #%% define the regular expression pattern
-condition_block_start_pattern:re.Pattern = re.compile(r'^#>>> ({.*})\s*')
+condition_block_start_pattern:re.Pattern = re.compile(r'^#>>> ({.*})\s*(#<<<)?\s*')
 condition_block_end_pattern:re.Pattern = re.compile(r'^#<<<\s*')
 command_block_start_pattern:re.Pattern = re.compile(r'^#%%(.*) ({.*})\s*(#%%)?\s*')
 command_block_end_pattern:re.Pattern = re.compile(r'^#%%\s*')
@@ -92,6 +92,8 @@ def exec_file(filepath:str,data_dict=dict()):
                     condition_block_stack.append(check_and_load_condition(condition_dict,data_dict))
                 else:
                     condition_block_stack.append(False)
+                if match_condition_start.group(2):
+                    condition_block_stack.pop()
             elif condition_block_end_pattern.fullmatch(line):
                 condition_block_stack.pop()
             elif not condition_block_stack or all(condition_block_stack):
