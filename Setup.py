@@ -116,6 +116,7 @@ def exec_file(filepath:str,data_dict=dict()):
                     if '@' in post_parameters:
                         command_block.wait_flag = True
                     if is_one_line_block:
+                        command_block.run(data_dict)
                         command_block = None
                 elif command_block_end_pattern.fullmatch(line):
                     if command_block:
