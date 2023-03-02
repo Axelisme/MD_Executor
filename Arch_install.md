@@ -81,102 +81,102 @@ cfdisk /dev/{Name_of_disk2}    #圖形化分割磁碟
 #%% {}
 lsblk
 #%%
-#%%* {"efi_partition":".+","swap_partition":".+"} #%%
-#%%* {"root_partition":".+","home_partition":".+"} #%%
+#%%* {"efi_partition":".+"} #%%
+#%%* {"swap_partition":".*"} #%%
+#%%* {"root_partition":".+"} #%%
+#%%* {"home_partition":".*"} #%%
 #%%* {"filesystem":["btrfs","ext4"]} #%%
 -->
 ```bash=
-#%%@* {"efi_partition":".+","swap_partition":".+"}
+#%%@* {"efi_partition":".+"}
 mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
+#%%
+#%%@ {"swap_partition":".+"}
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
-#%%@ {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
+#>>> {"filesystem":"btrfs"}
+#%%@* {"root_partition":".+"}
 mkfs.btrfs -f /dev/{root_partition}    #格式化root分區成btrfs
+#%%
+#%%@ {"home_partition":".+"}
 mkfs.btrfs -f /dev/{home_partition}    #格式化home分區成btrfs
 #%%
+#<<<
 or
-#%%@ {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
+#>>> {"filesystem":"ext4"}
+#%%@* {"root_partition":".+"}
 mkfs.ext4 /dev/{root_partition}    #格式化root分區成ext4
+#%%
+#%%@ {"home_partition":".+"}
 mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 #%%
+#<<<
 ```
 
 ### 掛載磁碟分區(use btrfs)
-<!--
-#>>> {"filesystem":["btrfs","ext4"]} 
-#<<<
-#>>> {"filesystem":"btrfs"}
--->
 ```bash=
-#%%@ {}
-#創建資料夾
-mkdir /mnt/btrfs_root
-mkdir /mnt/btrfs_home
-mkdir /mnt/root
+#>>> {"filesystem":"btrfs"}
+#%% {}
+lsblk
 #%%
+#掛載root與boot
+#%%@ {}
+mkdir /mnt/btrfs_root  #創建資料夾
+mkdir /mnt/root
+mount /dev/{root_partition} /mnt/btrfs_root
+btrfs subvolume create /mnt/btrfs_root/@  #建立子捲
+mount /dev/{root_partition} -o subvol=@ /mnt/root #掛載
+mkdir /mnt/root/boot
+mount /dev/{efi_partition} /mnt/root/boot    #EFI分區掛載到/mnt
+#%%
+##掛載home
+#%%@ {"home_partition":".+"}
+mkdir /mnt/btrfs_home
+mount /dev/{home_partition} /mnt/btrfs_home
+btrfs subvolume create /mnt/btrfs_home/@home
+mkdir /mnt/root/home
+mount /dev/{home_partition} -o subvol=@home /mnt/root/home
+#%%
+#掛載swap
+#%%@ {"swap_partition":".+"}
+swapon /dev/{swap_partition}    #掛載swap分區
+#%%
+#<<<
+#為不想備份到的部份建立子捲
+#btrfs sub create /mnt/root/tmp
+```
+
+### 掛載磁碟分區(use ext4)
+```bash=
+#>>> {"filesystem":"ext4"}
 #%% {}
 lsblk
 #%%
 #%%@ {}
-#掛載btrfs磁碟到/mnt/btrfs_xx
-mount /dev/{root_partition} /mnt/btrfs_root
-mount /dev/{home_partition} /mnt/btrfs_home
-#%%
-#%%@ {}
-#建立子捲
-btrfs subvolume create /mnt/btrfs_root/@
-btrfs subvolume create /mnt/btrfs_home/@home
-#%%
-#%%@ {}
-#掛載
-mount /dev/{root_partition} -o subvol=@ /mnt/root
-mkdir /mnt/root/boot
-mkdir /mnt/root/home
-mount /dev/{efi_partition} /mnt/root/boot    #EFI分區掛載到/mnt/boot
-mount /dev/{home_partition} -o subvol=@home /mnt/root/home
-swapon /dev/{swap_partition}    #掛載swap分區
-#%%
-#為不想備份到的部份建立子捲
-#btrfs sub create /mnt/root/tmp
-```
-<!--
-#<<<
--->
-
-### 掛載磁碟分區(use ext4)
-<!--
-#>>> {"filesystem":["btrfs","ext4"]} 
-#<<<
-#>>> {"filesystem":"ext4"}
--->
-```bash=
-#%%@ {}
 #創建資料夾
 mkdir /mnt/root
-#%% {}
-df -h
-#%%
 #掛載
 mount /dev/{root_partition} /mnt/root
-#%%
-#%%@ {}
 mkdir /mnt/root/boot
-mkdir /mnt/root/home
 mount /dev/{efi_partition} /mnt/root/boot    #EFI分區掛載到/mnt/boot
+#%%
+#%%@ {"home_partition":".+"}
+mkdir /mnt/root/home
 mount /dev/{home_partition} /mnt/root/home
+#%%
+#掛載swap
+#%%@ {"swap_partition":".+"}
 swapon /dev/{swap_partition}    #掛載swap分區
 #%%
-```
-<!--
 #<<<
--->
+```
 
 <!--
 #%% {} 
+echo "check!"
 df -h
 #%%
-#%%@ {} 
-#%%
+#%%@ {} #%%
 #<<<
 -->
 
@@ -344,9 +344,7 @@ ping -c 10 8.8.8.8
 #%%
 
 #如果需要設定連網
-#%% {}
 nmtui    #進入networkmanager TUI
-#%%
 ```
 
 ### pacman 設定
