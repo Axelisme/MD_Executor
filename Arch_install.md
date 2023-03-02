@@ -91,8 +91,8 @@ mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
 #%%@ {"filesystem":"btrfs","root_partition":".+","home_partition":".+"}
-mkfs.btrfs /dev/{root_partition}    #格式化root分區成btrfs
-mkfs.btrfs /dev/{home_partition}    #格式化home分區成btrfs
+mkfs.btrfs -f /dev/{root_partition}    #格式化root分區成btrfs
+mkfs.btrfs -f /dev/{home_partition}    #格式化home分區成btrfs
 #%%
 or
 #%%@ {"filesystem":"ext4","root_partition":".+","home_partition":".+"}
