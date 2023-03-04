@@ -35,7 +35,7 @@ class CommandBlock():
                 print("\n\n"+">"*50+"\nCommand to run:")
                 print(formatted_command,end='')
                 print("<"*50)
-                input("(Enter to run) ")          
+                input("(Enter to run) ")
             subprocess.run(formatted_command,shell=True,check=True).check_returncode()
 
 #%% handle how to interact with user
@@ -56,14 +56,13 @@ def user_input(cond_key,cond_value):
             user_respond = input(f"Unknown input, please enter again: ")
             if not user_respond:
                 user_respond = '0'
-        else:
-            return cond_value[int(user_respond)]
-    elif type(cond_value) is str:
+        return cond_value[int(user_respond)]
+    elif isinstance(cond_value,str):
         return input(f"What is your {cond_key}: ")
     else:
         raise ValueError("Unsupported type of condition value")
 
-#%% handle how to check an load condition 
+#%% handle how to check an load condition
 def check_and_load_condition(condition_dict,data_dict):
     for cond_key,cond_value in condition_dict.items():
         if not isinstance(cond_key,str):
@@ -71,20 +70,22 @@ def check_and_load_condition(condition_dict,data_dict):
         if cond_key not in data_dict:
             data_dict[cond_key] = user_input(cond_key,cond_value)
         if isinstance(cond_value,list):
-            if not any(re.fullmatch(cond_value_i,data_dict[cond_key]) for cond_value_i in cond_value):
+
+            if not any(re.fullmatch(cond_value_i,data_dict[cond_key]) \
+                       for cond_value_i in cond_value):
                 return False
         elif not re.fullmatch(cond_value,data_dict[cond_key]):
             return False
     return True
 
 #%% load file and execute it
-def exec_file(filepath:str,data_dict=dict()):
+def exec_file(filepath:str,data_dict:dict):
     not_store_set = set()
-    with open(filepath,'r') as fh:
+    with open(filepath,'r',encoding="utf-8") as fh:
         print("Start setup...")
         condition_block_stack = []
         command_block:Optional[CommandBlock] = None
-        for i,line in enumerate(fh.readlines()):
+        for line in fh.readlines():
             #print(line,end='')
             if match_condition_start := condition_block_start_pattern.fullmatch(line):
                 if not condition_block_stack or all(condition_block_stack):
@@ -110,7 +111,7 @@ def exec_file(filepath:str,data_dict=dict()):
                         if '*' in post_parameters:
                             raise ValueError(f"Unsupported given condition:\n{data_dict}")
                         else:
-                            print(f"Doesn't match the block condition:\n{condition_dict}\nIgnore this block.")
+                            print(f"""Doesn't match the block condition:\n{condition_dict}\nIgnore this block.""")
                     if '%' in post_parameters:
                         not_store_set.update(condition_dict.keys())
                     if '@' in post_parameters:
@@ -123,7 +124,7 @@ def exec_file(filepath:str,data_dict=dict()):
                         command_block.run(data_dict)
                         command_block = None
                     else:
-                        raise ValueError(f"Reach end of command block, but no block exist")
+                        raise ValueError("Reach end of command block, but no block exist")
                 elif command_block:
                     command_block.add(line)
         assert not condition_block_stack and not command_block
@@ -143,9 +144,9 @@ if __name__ == '__main__':
     
     #Load dictionary
     dict_path:str = "data/data_dict.json"
-    store_dict:dict = dict()
+    store_dict:dict = {}
     try:
-        with open(dict_path,"r") as fh:
+        with open(dict_path,"r",encoding="utf-8") as fh:
             store_dict = json.load(fh)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         pass
@@ -159,5 +160,5 @@ if __name__ == '__main__':
     store_dict = exec_file(file_path,store_dict)
 
     #Write dictionary into file
-    with open(dict_path,"w") as fh:
+    with open(dict_path,"w",encoding="utf-8") as fh:
         json.dump(store_dict,fh,indent=2)
