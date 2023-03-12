@@ -94,6 +94,9 @@ mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
 #%%@ {"swap_partition":".+"}
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
+```
+如果使用btrfs:
+```bash=
 #>>> {"filesystem":"btrfs"}
 #%%@* {"root_partition":".+"}
 mkfs.btrfs -f /dev/{root_partition}    #格式化root分區成btrfs
@@ -102,7 +105,9 @@ mkfs.btrfs -f /dev/{root_partition}    #格式化root分區成btrfs
 mkfs.btrfs -f /dev/{home_partition}    #格式化home分區成btrfs
 #%%
 #<<<
-or
+```
+如果使用ext4:
+```bash=
 #>>> {"filesystem":"ext4"}
 #%%@* {"root_partition":".+"}
 mkfs.ext4 /dev/{root_partition}    #格式化root分區成ext4
@@ -113,7 +118,8 @@ mkfs.ext4 /dev/{home_partition}    #格式化home分區成ext4
 #<<<
 ```
 
-### 掛載磁碟分區(use btrfs)
+### 掛載磁碟分區
+如果使用btrfs:
 ```bash=
 #>>> {"filesystem":"btrfs"}
 #%% {}
@@ -143,10 +149,9 @@ swapon /dev/{swap_partition}    #掛載swap分區
 #%%
 #<<<
 #為不想備份到的部份建立子捲
-#btrfs sub create /mnt/root/tmp
+btrfs sub create /mnt/root/tmp
 ```
-
-### 掛載磁碟分區(use ext4)
+如果使用ext4:
 ```bash=
 #>>> {"filesystem":"ext4"}
 #%% {}
@@ -173,7 +178,7 @@ swapon /dev/{swap_partition}    #掛載swap分區
 
 <!--
 #%% {} 
-echo "check!"
+echo "check it!"
 df -h
 #%%
 #%%@ {} #%%
@@ -208,6 +213,7 @@ nano /mnt/root/etc/fstab
 #給root與home分區加上
 # autodefrag,compress=zstd
 # relatime改成noatime
+# 去除subvolid
 #%%
 ```
 <!--
@@ -351,12 +357,14 @@ nmtui    #進入networkmanager TUI
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
-sed -i 's/^#\?Color$/Color/1' /etc/pacman.conf
+sed -i 's/^#\?\(Color\)$/\1/1' /etc/pacman.conf
 sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
-sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads=5/1' /etc/pacman.conf
-sed -i 's/^#\?UseSyslog$/UseSyslog/1' /etc/pacman.conf
-sed -i 's/^#\?CheckSpace$/CheckSpace/1' /etc/pacman.conf
-sed -i 's/^#\?VerbosePkgLists$/VerbosePkgLists/1' /etc/pacman.conf
+sed -i 's/^#\?\(ParallelDownloads\).*/\1 = 5/1' /etc/pacman.conf
+sed -i 's/^#\?\(UseSyslog\)$/\1/1' /etc/pacman.conf
+sed -i 's/^#\?\(CheckSpace\)$/\1/1' /etc/pacman.conf
+sed -i 's/^#\?\(VerbosePkgLists\)$/\1/1' /etc/pacman.conf
+sed -i 's/^#\?\(\[multilib\]\)$/\1/1' /etc/pacman.conf
+sed -i '/^#\?\[multilib\]$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
 nano /etc/pacman.conf
 #%%
 # misc options 下
@@ -368,7 +376,7 @@ UseSyslog
 CheckSpace
 VerbosePkgLists
 '
-# 取消註解multilib
+# 取消註解[multilib]以及其Include
 
 ```
 
@@ -682,6 +690,7 @@ options i915 fastboot=1     #快速啟動
 " | sudo tee -a /etc/modprobe.d/i915.conf
 #%%
 ```
+
 
 ### Manual setup
 手動設定桌面：
