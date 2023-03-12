@@ -236,6 +236,7 @@ arch-chroot /mnt/root          #把新裝的系統掛為root
 #%% {}
 pacman -S vi vim nano          #基礎文字編輯
 pacman -S networkmanager       #網路管理
+pacman -S dnsmasq              #netwokmanager可能需要
 pacman -S bash-completion      #bash自動補字
 pacman -S terminus-font        #tty字體
 #%%
@@ -691,6 +692,16 @@ options i915 fastboot=1     #快速啟動
 #%%
 ```
 
+### Update-grub
+```bash=
+echo '
+#!/bin/sh
+set -e
+exec grub-mkconfig -o /boot/grub/grub.cfg "$@"
+' | sudo tee /usr/sbin/update-grub
+sudo chown root:root /usr/sbin/update-grub
+sudo chmod 755 /usr/sbin/update-grub
+```
 
 ### Manual setup
 手動設定桌面：
