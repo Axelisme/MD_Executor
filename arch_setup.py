@@ -7,6 +7,7 @@ import json
 from sys import argv
 from subprocess import run
 from typing import Optional
+from io import StringIO
 
 #%% define the regular expression pattern
 condition_block_start_pattern:re.Pattern = re.compile(r'^#>>> ({.*})\s*(#<<<)?\s*')
@@ -20,22 +21,24 @@ class CommandBlock():
 
     wait_all_flag:bool = False
 
+    __slots__ = ('command_to_run', 'wait_flag', 'run_flag')
+
     def __init__(self,wait_flag=False,run_flag=True) -> None:
-        self.command_to_run:str = ""
+        self.command_to_run:StringIO= StringIO()
         self.wait_flag:bool = wait_flag
         self.run_flag:bool = run_flag
 
     def __repr__(self) -> str:
-        return self.command_to_run
+        return self.command_to_run.getvalue()
 
     def add(self,new_command:str) -> None:
-        "Add command to command block"
-        self.command_to_run += new_command
+        "Add a command to command block"
+        self.command_to_run.write(new_command)
 
     def run(self,data_dict:dict) -> None:
         "Run the command in command block"
         if self.run_flag:
-            formatted_command:str = self.command_to_run.format(**data_dict)
+            formatted_command:str = self.command_to_run.getvalue().format(**data_dict)
             if self.wait_all_flag or self.wait_flag:
                 print("\n\n"+">"*50+"\nCommand to run:")
                 print(formatted_command,end='')
@@ -88,11 +91,6 @@ def check_and_load_condition(condition_dict,data_dict) -> bool:
 def exec_file(filepath:str,data_dict:dict) -> dict:
     '''execute file from filepath'''
     not_store_set = set()
-    def make_store_dict(data_dict:dict,not_store_set:set) -> dict:
-        store_dict = data_dict.copy()
-        for key in not_store_set:
-            del store_dict[key]
-        return store_dict
     with open(filepath,'r',encoding="utf-8") as exec_fh:
         print("Start setup...")
         condition_block_stack = []
@@ -106,8 +104,7 @@ def exec_file(filepath:str,data_dict:dict) -> dict:
                 condition_block_stack.append(False)
             if match_condition_start.group(2):
                 condition_block_stack.pop()
-        def handle_condition_block_end(match_condition_end:re.Match) -> None:
-            # pylint: disable=unused-argument
+        def handle_condition_block_end() -> None:
             nonlocal condition_block_stack
             condition_block_stack.pop()
         def handle_command_block_start(match_command_start:re.Match) -> None:
@@ -134,15 +131,14 @@ def exec_file(filepath:str,data_dict:dict) -> dict:
             if is_one_line_block:
                 command_block.run(data_dict)
                 command_block = None
-        def handle_command_end(match_command_end:re.Match) -> None:
-            # pylint: disable=unused-argument
+        def handle_command_block_end() -> None:
             nonlocal command_block
             if command_block:
                 command_block.run(data_dict)
                 command_block = None
             else:
                 raise ValueError("Reach end of command block, but no block exist")
-        def handle_command(line:str) -> None:
+        def handle_line(line:str) -> None:
             nonlocal command_block
             if command_block:
                 command_block.add(line)
@@ -150,44 +146,59 @@ def exec_file(filepath:str,data_dict:dict) -> dict:
             #print(line,end='')
             if match_condition_start := condition_block_start_pattern.fullmatch(line):
                 handle_condition_block_start(match_condition_start)
-            elif match_condition_end := condition_block_end_pattern.fullmatch(line):
-                handle_condition_block_end(match_condition_end)
+            elif condition_block_end_pattern.fullmatch(line):
+                handle_condition_block_end()
             elif condition_block_stack and not all(condition_block_stack):
                 continue
             elif match_command_start := command_block_start_pattern.fullmatch(line):
                 handle_command_block_start(match_command_start)
-            elif match_command_end := command_block_end_pattern.fullmatch(line):
-                handle_command_end(match_command_end)
+            elif command_block_end_pattern.fullmatch(line):
+                handle_command_block_end()
             else:
-                handle_command(line)
+                handle_line(line)
         assert not condition_block_stack and not command_block
         print("Reach end of file, setup completely")
+    def make_store_dict(data_dict:dict,not_store_set:set) -> dict:
+        store_dict = data_dict.copy()
+        for key in not_store_set:
+            del store_dict[key]
+        return store_dict
     return make_store_dict(data_dict,not_store_set)
 
-#%% main function
-def main(file_path:str) -> None:
-    '''main function'''
-    #Load dictionary
-    dict_path:str = "data/data_dict.json"
+def load_file(dict_path:str) -> dict:
+    """Load dictionary from file"""
+    #load dictionary
     store_dict:dict = {}
     try:
         with open(dict_path,"r",encoding="utf-8") as exec_fh:
             store_dict = json.load(exec_fh)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
-        pass
+        return {}
     #user checking
     if store_dict:
         print(f"Load store dictionary:\n{store_dict}")
         input("I have checked (enter to continue) ")
 
-    #Execute file
-    store_dict = exec_file(file_path,store_dict)
+    return store_dict
 
-    #Write dictionary into file
-    with open(dict_path,"w",encoding="utf-8") as exec_fh:
+def dump_file(store_path:str,store_dict:dict) -> None:
+    """dump data into file"""
+    with open(store_path,"w",encoding="utf-8") as exec_fh:
         json.dump(store_dict,exec_fh,indent=2)
 
 #%% main function
+def main(file_path:str,dict_path:str = "data/data_dict.json") -> None:
+    '''main function'''
+    #Load dictionary
+    init_dict:dict = load_file(dict_path)
+
+    #Execute file
+    store_dict = exec_file(file_path,init_dict)
+
+    #Write dictionary into file
+    dump_file(dict_path,store_dict)
+
+#%% run code
 if __name__ == '__main__':
     exec_path:str = ""
     if len(argv) > 1:
