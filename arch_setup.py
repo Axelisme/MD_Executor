@@ -10,10 +10,10 @@ from typing import Optional
 from io import StringIO
 
 #%% define the regular expression pattern
-condition_block_start_pattern:re.Pattern = re.compile(r'^#>>> ({.*})\s*(#<<<)?\s*')
-condition_block_end_pattern:re.Pattern = re.compile(r'^#<<<\s*')
-command_block_start_pattern:re.Pattern = re.compile(r'^#%%(.*) ({.*})\s*(#%%)?\s*')
-command_block_end_pattern:re.Pattern = re.compile(r'^#%%\s*')
+condition_block_start_pattern:re.Pattern = re.compile(r'^#>>> ({.*})\s*(#<<<)?\s*$')
+condition_block_end_pattern:re.Pattern = re.compile(r'^#<<<\s*$')
+command_block_start_pattern:re.Pattern = re.compile(r'^#%%(.*) ({.*})\s*(#%%)?\s*$')
+command_block_end_pattern:re.Pattern = re.compile(r'^#%%\s*$')
 
 #%% define command block
 class CommandBlock():
@@ -21,12 +21,19 @@ class CommandBlock():
 
     wait_all_flag:bool = False
 
-    __slots__ = ('command_to_run', 'wait_flag', 'run_flag')
+    __slots__ = ('condition_dict', 'run_flag', 'not_store', 'wait_flag', 'command_to_run')
 
-    def __init__(self,wait_flag=False,run_flag=True) -> None:
+    def __init__(self, data_dict:dict, match_command_start:re.Match) -> None:
+        _match = match_command_start.groups()
+        post_parameters:str = _match[0]
+        self.condition_dict:dict = json.loads(_match[1].encode('utf-8'))
+
+        self.run_flag = check_and_load_condition(self.condition_dict,data_dict)
+        if not self.run_flag and '*' in post_parameters:
+            raise ValueError(f"Unsupported given condition:\n{data_dict}")
+        self.not_store = '%' in post_parameters
+        self.wait_flag = '@' in post_parameters
         self.command_to_run:StringIO= StringIO()
-        self.wait_flag:bool = wait_flag
-        self.run_flag:bool = run_flag
 
     def __repr__(self) -> str:
         return self.command_to_run.getvalue()
@@ -45,6 +52,7 @@ class CommandBlock():
                 print("<"*50)
                 input("(Enter to run) ")
             run(formatted_command,shell=True,check=True).check_returncode()
+        self.command_to_run.close()
 
 #%% handle how to interact with user
 def user_input(cond_key,cond_value) -> str:
@@ -107,41 +115,6 @@ def exec_file(filepath:str,data_dict:dict) -> dict:
         def handle_condition_block_end() -> None:
             nonlocal condition_block_stack
             condition_block_stack.pop()
-        def handle_command_block_start(match_command_start:re.Match) -> None:
-            nonlocal command_block
-            nonlocal not_store_set
-            _match = match_command_start.groups()
-            post_parameters:str = _match[0]
-            condition_dict:dict = json.loads(_match[1].encode('utf-8'))
-            is_one_line_block:bool = bool(_match[2])
-
-            command_block = CommandBlock()
-            command_block.run_flag = check_and_load_condition(condition_dict,data_dict)
-            if not command_block.run_flag:
-                if '*' in post_parameters:
-                    raise ValueError(f"Unsupported given condition:\n{data_dict}")
-                print(f"""\
-                    Doesn't match the block condition:
-                    {condition_dict}
-                    Ignore this block.""")
-            if '%' in post_parameters:
-                not_store_set.update(condition_dict.keys())
-            if '@' in post_parameters:
-                command_block.wait_flag = True
-            if is_one_line_block:
-                command_block.run(data_dict)
-                command_block = None
-        def handle_command_block_end() -> None:
-            nonlocal command_block
-            if command_block:
-                command_block.run(data_dict)
-                command_block = None
-            else:
-                raise ValueError("Reach end of command block, but no block exist")
-        def handle_line(line:str) -> None:
-            nonlocal command_block
-            if command_block:
-                command_block.add(line)
         for line in exec_fh.readlines():
             #print(line,end='')
             if match_condition_start := condition_block_start_pattern.fullmatch(line):
@@ -151,11 +124,21 @@ def exec_file(filepath:str,data_dict:dict) -> dict:
             elif condition_block_stack and not all(condition_block_stack):
                 continue
             elif match_command_start := command_block_start_pattern.fullmatch(line):
-                handle_command_block_start(match_command_start)
+                if command_block:
+                    raise ValueError("Reach start of command block but previous one not terminate")
+                command_block = CommandBlock(data_dict, match_command_start)
+                if command_block.not_store:
+                    not_store_set.update(command_block.condition_dict.keys())
+                if match_command_start.group(3):
+                    command_block = None
             elif command_block_end_pattern.fullmatch(line):
-                handle_command_block_end()
-            else:
-                handle_line(line)
+                if command_block:
+                    command_block.run(data_dict)
+                    command_block = None
+                else:
+                    raise ValueError("Reach end of command block, but no block exist")
+            elif command_block:
+                command_block.add(line)
         assert not condition_block_stack and not command_block
         print("Reach end of file, setup completely")
     def make_store_dict(data_dict:dict,not_store_set:set) -> dict:
@@ -170,8 +153,8 @@ def load_file(dict_path:str) -> dict:
     #load dictionary
     store_dict:dict = {}
     try:
-        with open(dict_path,"r",encoding="utf-8") as exec_fh:
-            store_dict = json.load(exec_fh)
+        with open(dict_path,"r",encoding="utf-8") as load_fh:
+            store_dict = json.load(load_fh)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         return {}
     #user checking
@@ -183,8 +166,8 @@ def load_file(dict_path:str) -> dict:
 
 def dump_file(store_path:str,store_dict:dict) -> None:
     """dump data into file"""
-    with open(store_path,"w",encoding="utf-8") as exec_fh:
-        json.dump(store_dict,exec_fh,indent=2)
+    with open(store_path,"w",encoding="utf-8") as dump_fh:
+        json.dump(store_dict,dump_fh,indent=2)
 
 #%% main function
 def main(file_path:str,dict_path:str = "data/data_dict.json") -> None:
