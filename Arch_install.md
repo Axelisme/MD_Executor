@@ -1,4 +1,5 @@
 # Arch 安裝
+###### tags: `Linux` `Arch`
 
 >Arch linux 的安裝流程，含非必要的個人喜好軟體 [name=Axelisme]
 >https://github.com/Axelisme/Arch_Setup.git
@@ -529,7 +530,7 @@ sudo pacman -S kde-applications       #kde 搭配軟體
 | 23   | gwenview         | 1            | 看圖軟體                    |
 | 34   | kamoso           | 3            | 電腦相機拍照                |
 | 38   | kate             | 1            | 文字編輯器                  |
-| 47   | kcalc            | 2            | 小計算機                    |
+| 47   | kcalc            | 3            | 小計算機                    |
 | 48   | kcharselect      | 2            | 特殊符號選擇庫              |
 | 54   | kdekonnect       | 1            | 多裝置之間連線傳檔案        |
 | 57   | kdenlive         | 3            | 影片剪輯工具                |
@@ -659,7 +660,7 @@ options nvidia NVreg_DynamicPowerManagement=0x02
 sudo sed -i 's/^#HooDir/HooDir/1' /etc/pacman.conf  #取消註解HooDir
 sudo mkdir /etc/pacman.d/hooks/
 #請確保Target是自己裝的nvidia版本（如nvidia或nvidia-lts...之類）
-echo "
+echo -e "
 [Trigger]
 Operation=Install
 Operation=Upgrade
@@ -674,7 +675,7 @@ Description=Update NVIDIA module in initcpio
 Depends=mkinitcpio
 When=PostTransaction
 NeedsTargets
-Exec=/bin/sh -c 'while read -r trg; do case $trg in {kernel}) exit 0; esac; done; /usr/bin/mkinitcpio -P {kernel}'
+Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; esac; done; /usr/bin/mkinitcpio -P'
 " | sudo tee /etc/pacman.d/hooks/nvidia.hook
 sudo nano /etc/pacman.d/hooks/nvidia.hook
 #%%
