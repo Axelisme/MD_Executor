@@ -258,7 +258,7 @@ nano /etc/locale.gen    #編輯語言庫
 locale-gen              #生成語言資料
 echo '
 LANG=en_US.UTF-8' | tee -a /etc/locale.conf
-nano /etc/locale.conf    
+#nano /etc/locale.conf    
 # 添加
 # LANG=en_US.UTF-8
 #%%
@@ -270,6 +270,7 @@ echo "{hostname}" >> /etc/hostname
 
 #%% {}
 #設定root密碼
+echo "enter root passwd:"
 passwd
 #%%
 ```
@@ -290,6 +291,18 @@ systemctl enable grub-btrfsd
 
 #%% {}
 cp /etc/default/grub /etc/default/grub.backup
+#%%
+```
+<!--
+#>>> {"CPU":"intel","Intel_Version":[">=12","<12"]} #<<<
+#%% {"CPU":"intel","Intel_Version":">=12"}
+sed -Ei 's/^(GRUB_CMDLINE_LINUX_DEFAULT)="(.*)"$/\1="\2 ibt=off"/1' /etc/default/grub
+#%%
+#%%
+sed -Ei 's/^#?(GRUB_TIMEOUT)=\d+$/\1=1/1' /etc/default/grub
+sed -Ei 's/^(GRUB_CMDLINE_LINUX_DEFAULT)="(.*) quiet (.*)"$/\1="\2 nowatchdog \3"/1' /etc/default/grub
+-->
+```bash=
 nano /etc/default/grub
 #TIMEOUT改成1即可
 #GRUB_CMDLINE_LINUX_DEFAULT改為
@@ -359,14 +372,14 @@ nmtui    #進入networkmanager TUI
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
-sed -i 's/^#\?\(Color\)$/\1/1' /etc/pacman.conf
-sed -i '/^#\?Color$/a ILoveCandy' /etc/pacman.conf
-sed -i 's/^#\?\(ParallelDownloads\).*/\1 = 5/1' /etc/pacman.conf
-sed -i 's/^#\?\(UseSyslog\)$/\1/1' /etc/pacman.conf
-sed -i 's/^#\?\(CheckSpace\)$/\1/1' /etc/pacman.conf
-sed -i 's/^#\?\(VerbosePkgLists\)$/\1/1' /etc/pacman.conf
-sed -i 's/^#\?\(\[multilib\]\)$/\1/1' /etc/pacman.conf
-sed -i '/^#\?\[multilib\]$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
+sed -Ei 's/^#?(Color)$/\1/1' /etc/pacman.conf
+sed -Ei '/^#?Color$/a ILoveCandy' /etc/pacman.conf
+sed -Ei 's/^#?(ParallelDownloads).*/\1 = 5/1' /etc/pacman.conf
+sed -Ei 's/^#?(UseSyslog)$/\1/1' /etc/pacman.conf
+sed -Ei 's/^#?(CheckSpace)$/\1/1' /etc/pacman.conf
+sed -Ei 's/^#?(VerbosePkgLists)$/\1/1' /etc/pacman.conf
+sed -Ei 's/^#?(\[multilib\])$/\1/1' /etc/pacman.conf
+sed -Ei '/^#?\[multilib\]$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
 nano /etc/pacman.conf
 #%%
 # misc options 下
@@ -393,7 +406,7 @@ pacman -Syyu
 ```bash=
 #%% {}
 cp /etc/makepkg.conf /etc/makepkg.conf.backup
-sed -i 's/^#\?MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
+sed -Ei 's/^#?MAKEFLAGS=".*"/MAKEFLAGS="-j$(nproc)"/1' /etc/makepkg.conf
 nano /etc/makepkg.conf 
 #let MAKEFLAGS="-j$(nproc)"
 #%%
@@ -455,13 +468,24 @@ pacman -S nvidia-lts
 ```
 
 ### Mkinitcpio設定
+<!--
+#%% {} 
+cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.backup 
+#%%
+#%% {"GPU":"nvidia"}
+sed -Ei 's/^(MODULES)=\((.*)\)$/\1=(\2 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/1' /etc/mkinitcpio.conf
+sed -Ei 's/^(HOOKS)=\((.*) kms (.*)\)$/\1=(\2 \3)/1' /etc/mkinitcpio.conf
+#%%
+#%% {"filesystem":"btrfs"}
+sed -Ei 's/^(HOOKS)=\((.*)\)$/\1=(\2 grub-btrfs-overlayfs)/1' /etc/mkinitcpio.conf
+#%%
+-->
 ```bash=
 #%% {}
 #有用Nvidia或Grub-btrfs需要更改mkinitcpio.conf
-cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.backup 
 nano /etc/mkinitcpio.conf
 #Set
-# MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)  #Nvidia
+# MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)  #Nvidia
 # HOOKS=(base ... modconf ... fsck)    去除kms #Nvidia
 # HOOKS=(base ... modconf ... fsck grub-btrfs-overlayfs) # Grub-btrfs
 
@@ -470,14 +494,15 @@ mkinitcpio -p {kernel}
 ```
 
 ### Grub設定
+<!--
+#%% {"GPU":"nvidia"}
+sed -Ei 's/^(GRUB_CMDLINE_LINUX_DEFAULT)="(.*)"$/\1="\2 nvidia_drm.modeset=1"/1' /etc/default/grub 
+#%%
+-->
 ```bash=
-#%% {}
+#%% {"GPU":"nvidia"}
 nano /etc/default/grub
-# GRUB_TIMEOUT="1"
-#GRUB_CMDLINE_LINUX_DEFAULT改為
-#去除quiet
 # "... nvidia_drm.modeset=1" （有用Nvidia時才要加）
-#intel太新的CPU有bug，若重開機時Load Kernal fail，要再加上"ibt=off"
 grub-mkconfig -o /boot/grub/grub.cfg
 #%%
 ```
@@ -486,10 +511,12 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ```bash=
 #%% {"user_name": ".+"}
 useradd -m -g users -G wheel -s /bin/bash {user_name}    #創名為{user_name}的用戶
+echo "user password:"
 passwd {user_name}    #更改用戶axel的密碼
 #%%
 
 #%% {}
+sed -Ei 's/^#? (%wheel ALL=\(ALL:ALL\) ALL)$/\1/1' /etc/sudoers
 visudo    #編輯群組權限（取消註解wheel:(ALL) ALL）
 #%%
 ```
@@ -514,6 +541,7 @@ sudo pacman -S xorg-server            #X11 session
 sudo pacman -S sddm                   #登入管理器
 sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
 sudo pacman -S plasma                 #kde 桌面
+echo 'recommand: 5 13 14 15 19 20 23 38 54 64 111 128 136 145 148 158 175'
 sudo pacman -S kde-applications       #kde 搭配軟體
 #%%
 ```
