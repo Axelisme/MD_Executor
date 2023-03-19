@@ -298,11 +298,13 @@ cp /etc/default/grub /etc/default/grub.backup
 #%% {"CPU":"intel","Intel_Version":">=12"}
 sed -Ei 's/^(GRUB_CMDLINE_LINUX_DEFAULT)="(.*)"$/\1="\2 ibt=off"/1' /etc/default/grub
 #%%
-#%%
+#%% {}
 sed -Ei 's/^#?(GRUB_TIMEOUT)=\d+$/\1=1/1' /etc/default/grub
 sed -Ei 's/^(GRUB_CMDLINE_LINUX_DEFAULT)="(.*) quiet (.*)"$/\1="\2 nowatchdog \3"/1' /etc/default/grub
+#%%
 -->
 ```bash=
+#%% {}
 nano /etc/default/grub
 #TIMEOUT改成1即可
 #GRUB_CMDLINE_LINUX_DEFAULT改為
