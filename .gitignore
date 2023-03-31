@@ -2,3 +2,4 @@ test.py
 .vscode
 arch_setup.build
 __pycache__
+*.pyc
