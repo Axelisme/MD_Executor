@@ -5,7 +5,7 @@
 >https://github.com/Axelisme/Arch_Setup.git
 
 <!--
-#%%% {"Step":["Live USB","chroot","TTY root","TTY user","KDE user"]} #%%
+#%%% {"Step":["Live USB","chroot","TTY root","TTY user"]} #%%
 -->
 
 ## Arch 安裝I  （Live USB）
@@ -24,7 +24,7 @@ setfont ter-132n
 ```bash=
 #%% {}
 #確認連線狀態
-ping -c 10 8.8.8.8
+ping -c 5 8.8.8.8
 #%%
 
 #如果要連wifi
@@ -96,7 +96,7 @@ mkfs.fat -F 32 /dev/{efi_partition}    #EFI分區格式化成Fat32
 mkswap /dev/{swap_partition}    #格式化swap
 #%%
 ```
-如果使用btrfs:
+如果要使用btrfs:
 ```bash=
 #>>> {"filesystem":"btrfs"}
 #%%@* {"root_partition":".+"}
@@ -107,7 +107,7 @@ mkfs.btrfs -f /dev/{home_partition}    #格式化home分區成btrfs
 #%%
 #<<<
 ```
-如果使用ext4:
+如果要使用ext4:
 ```bash=
 #>>> {"filesystem":"ext4"}
 #%%@* {"root_partition":".+"}
@@ -363,7 +363,7 @@ setfont ter-132n
 ```bash=
 #%% {}
 #確認連線狀態
-ping -c 10 8.8.8.8
+ping -c 5 8.8.8.8
 #%%
 
 #如果需要設定連網
@@ -374,6 +374,10 @@ nmtui    #進入networkmanager TUI
 ```bash=
 #%% {}
 cp /etc/pacman.conf /etc/pacman.conf.backup
+#%%
+```
+<!--
+#%% {}
 sed -Ei 's/^#?(Color)$/\1/1' /etc/pacman.conf
 sed -Ei '/^#?Color$/a ILoveCandy' /etc/pacman.conf
 sed -Ei 's/^#?(ParallelDownloads).*/\1 = 5/1' /etc/pacman.conf
@@ -382,6 +386,10 @@ sed -Ei 's/^#?(CheckSpace)$/\1/1' /etc/pacman.conf
 sed -Ei 's/^#?(VerbosePkgLists)$/\1/1' /etc/pacman.conf
 sed -Ei 's/^#?(\[multilib\])$/\1/1' /etc/pacman.conf
 sed -Ei '/^#?\[multilib\]$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
+#%%
+-->
+```bash=
+#%% {}
 nano /etc/pacman.conf
 #%%
 # misc options 下
@@ -535,11 +543,50 @@ exit
 <!--
 #>>> {"Step":"TTY user"}
 -->
+### 排序mirror list
+請參考 https://wiki.archlinux.org/title/mirrors
+mirror可從 https://archlinux.org/mirrorlist/ 獲得
+```bash=
+#%% {}
+sudo pacman -S pacman-contrib         #rankmirrors command
+sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
+echo '
+## Taiwan
+Server = https://free.nchc.org.tw/arch/$repo/os/$arch
+Server = https://archlinux.cs.nycu.edu.tw/$repo/os/$arch
+Server = http://ftp.tku.edu.tw/Linux/ArchLinux/$repo/os/$arch
+Server = http://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
+Server = http://archlinux.ccns.ncku.edu.tw/archlinux/$repo/os/$arch
+Server = https://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
+' | sudo tee -a /etc/pacman.d/mirrorlist.backup
+rankmirrors /etc/pacman.d/mirrorlist.backup | sudo tee /etc/pacman.d/mirrorlist
 
+sudo pacman -Syyu    #更新pacman的mirrorlist
+#%%
+```
+### GUI protocol
+<!--
+#%% {"GUI protocol":["X11","Wayland","Both"]} #%%
+-->
+想使用X11:
+```bash=
+#%% {"GUI protocol":["X11","Both"}
+sudo pacman -S xorg-server            #X11 session
+#%%
+```
+想使用Wayland:
+```bash=
+#%% {"GUI protocol":["Wayland","Both"}
+# Wayland
+yay -S qt5-wayland qt6-wayland xorg-xwayland
+yay -S plasma-wayland-session plasma-wayland-protocols #if use kde
+echo "GBM_BACKEND=nvidia-drm
+__GLX_VENDOR_LIBRARY_NAME=nvidia" | sudo tee -a /etc/profile
+#%%
+```
 ### KDE
 ```bash=
 #%% {}
-sudo pacman -S xorg-server            #X11 session
 sudo pacman -S sddm                   #登入管理器
 sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
 sudo pacman -S plasma                 #kde 桌面
@@ -554,7 +601,7 @@ sudo pacman -S kde-applications       #kde 搭配軟體
 | 13   | color-kde        | 1            | 桌面色彩管理                |
 | 14   | dolphin          | 1            | 檔案管理                    |
 | 15   | dolphin-plugins  | 1            | dolphin插件                 |
-| 17   | elisa            | 2            | 音樂專輯播放器              |
+| 17   | elisa            | 3            | 音樂專輯播放器              |
 | 19   | ffmpegthumbs     | 1            | 讓檔案瀏覽器預覽影片        |
 | 20   | filelight        | 1            | 查看硬碟使用空間            |
 | 23   | gwenview         | 1            | 看圖軟體                    |
@@ -596,49 +643,6 @@ sudo pacman -S noto-fonts-emoji    #顏文字
 #%%
 ```
 
-### Firefox
-```bash= 
-#%% {}
-sudo pacman -S firefox                #上網
-#%%
-```
-
-### 重新開機
-```bash=
-reboot
-```
-<!--
-#<<<
--->
-
-## Arch 安裝V（KDE user）
-先登入firefox同步後比較方便
-<!--
-#>>> {"Step":"KDE user"}
--->
-
-### 排序mirror list
-請參考 https://wiki.archlinux.org/title/mirrors
-mirror可從 https://archlinux.org/mirrorlist/ 獲得
-```bash=
-#%% {}
-sudo pacman -S pacman-contrib         #rankmirrors command
-sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
-echo '
-## Taiwan
-Server = https://free.nchc.org.tw/arch/$repo/os/$arch
-Server = https://archlinux.cs.nycu.edu.tw/$repo/os/$arch
-Server = http://ftp.tku.edu.tw/Linux/ArchLinux/$repo/os/$arch
-Server = http://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
-Server = http://archlinux.ccns.ncku.edu.tw/archlinux/$repo/os/$arch
-Server = https://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
-' | sudo tee -a /etc/pacman.d/mirrorlist.backup
-rankmirrors /etc/pacman.d/mirrorlist.backup | sudo tee /etc/pacman.d/mirrorlist
-
-sudo pacman -Syyu    #更新pacman的mirrorlist
-#%%
-```
-
 ### Yay(AUR管理指令)
 ```bash=
 #%% {}
@@ -651,6 +655,13 @@ cd
 yay -Y --combinedupgrade --batchinstall --devel --save
 yay --noeditmenu --nodiffmenu --save
 yay -Y --gendb
+#%%
+```
+
+### Firefox
+```bash= 
+#%% {}
+sudo pacman -S firefox                #上網
 #%%
 ```
 
@@ -725,6 +736,7 @@ options i915 fastboot=1     #快速啟動
 
 ### Update-grub
 ```bash=
+#%% {}
 echo '
 #!/bin/sh
 set -e
@@ -732,7 +744,20 @@ exec grub-mkconfig -o /boot/grub/grub.cfg "$@"
 ' | sudo tee /usr/sbin/update-grub
 sudo chown root:root /usr/sbin/update-grub
 sudo chmod 755 /usr/sbin/update-grub
+#%%
 ```
+
+### 重新開機
+```bash=
+reboot
+```
+
+<!--
+#<<<
+-->
+
+## Arch 安裝V（KDE user）
+先登入firefox同步後比較方便
 
 ### Manual setup
 手動設定桌面：
@@ -760,9 +785,6 @@ ln -s ~/.local/share/kwin/scripts/krohnkite/metadata.desktop ~/.local/share/kser
 其餘請參見Arch快速設定
 https://hackmd.io/@Axelisme/SJJay80os/edit
 
-<!--
-#<<<
--->
 
 # 有用的網站
 
