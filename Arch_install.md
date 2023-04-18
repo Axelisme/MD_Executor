@@ -34,6 +34,8 @@ station wlan0 scan    #掃描網卡wlan0底下偵測到的wifi
 station wlan0 get-networks    #顯示網卡wlan0底下偵測到的wifi
 station wlan0 connect "wifi"    #用網卡wlan0連接"wifi"
 exit    #離開iwctl界面
+# 如果要連有線
+
 ```
 
 ### 更新系統時間
@@ -570,13 +572,13 @@ sudo pacman -Syyu    #更新pacman的mirrorlist
 -->
 想使用X11:
 ```bash=
-#%% {"GUI protocol":["X11","Both"}
+#%% {"GUI protocol":["X11","Both"]}
 sudo pacman -S xorg-server            #X11 session
 #%%
 ```
 想使用Wayland:
 ```bash=
-#%% {"GUI protocol":["Wayland","Both"}
+#%% {"GUI protocol":["Wayland","Both"]}
 # Wayland
 yay -S qt5-wayland qt6-wayland xorg-xwayland
 yay -S plasma-wayland-session plasma-wayland-protocols #if use kde
