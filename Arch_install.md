@@ -34,8 +34,15 @@ station wlan0 scan    #掃描網卡wlan0底下偵測到的wifi
 station wlan0 get-networks    #顯示網卡wlan0底下偵測到的wifi
 station wlan0 connect "wifi"    #用網卡wlan0連接"wifi"
 exit    #離開iwctl界面
-# 如果要連有線
-
+# 如果要連有線(static ip)
+ip link
+ip addr
+ip route
+ip addr flush dev enpXXX
+ip route flush dev enpXXX
+ip addr add address/24 dev enpXXX
+ip route add default via gateway
+nano /etc/resolv.conf  #加上nameserver DNS_IP
 ```
 
 ### 更新系統時間
@@ -238,7 +245,7 @@ arch-chroot /mnt/root          #把新裝的系統掛為root
 ```bash=
 #%% {}
 pacman -S vi vim nano          #基礎文字編輯
-pacman -S networkmanager       #網路管理
+pacman -S networkmanager net-tools       #網路管理
 pacman -S dnsmasq              #netwokmanager可能需要
 pacman -S bash-completion      #bash自動補字
 pacman -S terminus-font        #tty字體
@@ -439,7 +446,6 @@ pacman -S python python-pip            #Python相關
 pacman -S wget                         #其他
 pacman -S alsa-utils pipewire pipewire-pulse pipewire-alsa pipewire-jack #音效
 #pacman -S spice-vdagent               #虛擬機Guest用
-#systemctl enable sshd                 #啟動ssh伺服器
 #%%
 
 #%%* {"CPU":["amd", "intel"]} #%%
@@ -485,7 +491,6 @@ pacman -S nvidia-lts
 cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.backup 
 #%%
 #%% {"GPU":"nvidia"}
-sed -Ei 's/^(MODULES)=\((.*)\)$/\1=(\2 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/1' /etc/mkinitcpio.conf
 sed -Ei 's/^(HOOKS)=\((.*) kms (.*)\)$/\1=(\2 \3)/1' /etc/mkinitcpio.conf
 #%%
 #%% {"filesystem":"btrfs"}
@@ -496,8 +501,7 @@ sed -Ei 's/^(HOOKS)=\((.*)\)$/\1=(\2 grub-btrfs-overlayfs)/1' /etc/mkinitcpio.co
 #%% {}
 #有用Nvidia或Grub-btrfs需要更改mkinitcpio.conf
 nano /etc/mkinitcpio.conf
-#Set
-# MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)  #Nvidia
+ #Nvidia
 # HOOKS=(base ... modconf ... fsck)    去除kms #Nvidia
 # HOOKS=(base ... modconf ... fsck grub-btrfs-overlayfs) # Grub-btrfs
 
@@ -554,94 +558,28 @@ sudo pacman -S pacman-contrib         #rankmirrors command
 sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 echo '
 ## Taiwan
-Server = https://free.nchc.org.tw/arch/$repo/os/$arch
 Server = https://archlinux.cs.nycu.edu.tw/$repo/os/$arch
 Server = http://ftp.tku.edu.tw/Linux/ArchLinux/$repo/os/$arch
 Server = http://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
 Server = http://archlinux.ccns.ncku.edu.tw/archlinux/$repo/os/$arch
 Server = https://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
+
+## Switzerland
+#Server = http://pkg.adfinis.com/archlinux/$repo/os/$arch
+#Server = https://pkg.adfinis.com/archlinux/$repo/os/$arch
+#Server = http://mirror.init7.net/archlinux/$repo/os/$arch
+#Server = https://mirror.init7.net/archlinux/$repo/os/$arch
+#Server = http://mirror.metanet.ch/archlinux/$repo/os/$arch
+#Server = https://mirror.metanet.ch/archlinux/$repo/os/$arch
+#Server = http://mirror.puzzle.ch/archlinux/$repo/os/$arch
+#Server = https://mirror.puzzle.ch/archlinux/$repo/os/$arch
+#Server = https://theswissbay.ch/archlinux/$repo/os/$arch
+#Server = https://mirror.ungleich.ch/mirror/packages/archlinux/$repo/os/$arch
+#Server = https://mirror.worldhotspot.org/archlinux/$repo/os/$arch
 ' | sudo tee -a /etc/pacman.d/mirrorlist.backup
 rankmirrors /etc/pacman.d/mirrorlist.backup | sudo tee /etc/pacman.d/mirrorlist
 
 sudo pacman -Syyu    #更新pacman的mirrorlist
-#%%
-```
-### GUI protocol
-<!--
-#%% {"GUI protocol":["X11","Wayland","Both"]} #%%
--->
-想使用X11:
-```bash=
-#%% {"GUI protocol":["X11","Both"]}
-sudo pacman -S xorg-server            #X11 session
-#%%
-```
-想使用Wayland:
-```bash=
-#%% {"GUI protocol":["Wayland","Both"]}
-# Wayland
-yay -S qt5-wayland qt6-wayland xorg-xwayland
-yay -S plasma-wayland-session plasma-wayland-protocols #if use kde
-echo "GBM_BACKEND=nvidia-drm
-__GLX_VENDOR_LIBRARY_NAME=nvidia" | sudo tee -a /etc/profile
-#%%
-```
-### KDE
-```bash=
-#%% {}
-sudo pacman -S sddm                   #登入管理器
-sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
-sudo pacman -S plasma                 #kde 桌面
-echo 'recommand: 5 13 14 15 19 20 23 38 54 64 111 128 136 145 148 158 175'
-sudo pacman -S kde-applications       #kde 搭配軟體
-#%%
-```
-一些kde-applications可用軟體清單
-| 編號 | 名稱             | 推薦度（🡫） | 描述                        |
-| ---- | ---------------- | ------------ | --------------------------- |
-| 5    | ark              | 1            | 壓縮軟體                    |
-| 13   | color-kde        | 1            | 桌面色彩管理                |
-| 14   | dolphin          | 1            | 檔案管理                    |
-| 15   | dolphin-plugins  | 1            | dolphin插件                 |
-| 17   | elisa            | 3            | 音樂專輯播放器              |
-| 19   | ffmpegthumbs     | 1            | 讓檔案瀏覽器預覽影片        |
-| 20   | filelight        | 1            | 查看硬碟使用空間            |
-| 23   | gwenview         | 1            | 看圖軟體                    |
-| 34   | kamoso           | 3            | 電腦相機拍照                |
-| 38   | kate             | 1            | 文字編輯器                  |
-| 47   | kcalc            | 3            | 小計算機                    |
-| 48   | kcharselect      | 2            | 特殊符號選擇庫              |
-| 54   | kdekonnect       | 1            | 多裝置之間連線傳檔案        |
-| 57   | kdenlive         | 3            | 影片剪輯工具                |
-| 64   | kdf              | 1            | 硬碟使用檢視                |
-| 68   | kfind            | 3            | 檔案尋找軟體                |
-| 76   | khelpcenter      | 2            | KDE軟體說明文件             |
-| 107  | kolourpaint      | 2            | 小畫家                      |
-| 111  | konsole          | 1            | 終端機                      |
-| 128  | ksystemlog       | 1            | 查看systemlog               |
-| 131  | ktorrent         | 3            | torrent種子下載器           |
-| 136  | kwalletmanager   | 1            | 電腦秘要權限管理？          |
-| 145  | okular           | 1            | PDF閱讀軟體                 |
-| 148  | partitiomanager  | 1            | 磁碟分割管理                |
-| 158  | spectacle        | 1            | 螢幕節圖軟體                |
-| 175  | yakuake          | 1            | 下拉型終端機                |
-
-
-
-### 藍芽
-```bash=
-#%% {}
-sudo pacman -S bluez bluez-utils
-sudo systemctl enable bluetooth.service
-#%%
-```
-
-### 字體
-```bash=
-#%% {}
-sudo pacman -S noto-fonts-cjk    #亞洲字體
-sudo pacman -S noto-fonts-emoji    #顏文字
-# sudo pacman -S noto-fonts-extra    #少數字
 #%%
 ```
 
@@ -657,6 +595,86 @@ cd
 yay -Y --combinedupgrade --batchinstall --devel --save
 yay --noeditmenu --nodiffmenu --save
 yay -Y --gendb
+#%%
+```
+
+### GUI protocol
+<!--
+#%% {"GUI protocol":["X11","Wayland","Both"]} #%%
+-->
+想使用X11:
+```bash=
+#%% {"GUI protocol":["X11","Both"]}
+sudo pacman -S xorg-server            #X11 session
+#%%
+```
+想使用Wayland:
+```bash=
+#%% {"GUI protocol":["Wayland","Both"]}
+# Wayland
+sudo pacman -S qt5-wayland qt6-wayland xorg-xwayland
+#if use kde
+sudo pacman -S plasma-wayland-session plasma-wayland-protocols 
+#%%
+#%% {"GUI protocol":["Wayland","Both"], "GPU":"nvidia"}
+echo "GBM_BACKEND=nvidia-drm
+__GLX_VENDOR_LIBRARY_NAME=nvidia" | sudo tee -a /etc/profile
+#%%
+```
+### KDE
+```bash=
+#%% {}
+yay -S sddm-git                   #登入管理器
+sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
+sudo pacman -S plasma                 #kde 桌面
+echo 'recommand: 5 13 14 15 19 20 23 38 54 64 111 128 136 145 148 158 175'
+sudo pacman -S kde-applications       #kde 搭配軟體
+#%%
+```
+一些kde-applications可用軟體清單
+| 編號 | 名稱             | 推薦度（🡫） | 描述                        |
+| ---- | ---------------- | ------------ | --------------------------- |
+| 7    | ark              | 1            | 壓縮軟體                    |
+| 16   | color-kde        | 1            | 桌面色彩管理                |
+| 17   | dolphin          | 1            | 檔案管理                    |
+| 18   | dolphin-plugins  | 1            | dolphin插件                 |
+| 20   | elisa            | 3            | 音樂專輯播放器              |
+| 22   | ffmpegthumbs     | 1            | 讓檔案瀏覽器預覽影片        |
+| 23   | filelight        | 1            | 查看硬碟使用空間            |
+| 27   | gwenview         | 1            | 看圖軟體                    |
+| 39   | kamoso           | 3            | 電腦相機拍照                |
+| 44   | kate             | 1            | 文字編輯器                  |
+| 53   | kcalc            | 3            | 小計算機                    |
+| 54   | kcharselect      | 2            | 特殊符號選擇庫              |
+| 62   | kdekonnect       | 1            | 多裝置之間連線傳檔案        |
+| 65   | kdenlive         | 3            | 影片剪輯工具                |
+| 72   | kdf              | 1            | 硬碟使用檢視                |
+| 77   | kfind            | 3            | 檔案尋找軟體                |
+| 85   | khelpcenter      | 2            | KDE軟體說明文件             |
+| 119  | kolourpaint      | 2            | 小畫家                      |
+| 124  | konsole          | 1            | 終端機                      |
+| 142  | ksystemlog       | 1            | 查看systemlog               |
+| 145  | ktorrent         | 3            | torrent種子下載器           |
+| 151  | kwalletmanager   | 1            | 電腦秘要權限管理？          |
+| 162  | okular           | 1            | PDF閱讀軟體                 |
+| 165  | partitiomanager  | 1            | 磁碟分割管理                |
+| 176  | spectacle        | 1            | 螢幕截圖軟體                |
+| 195  | yakuake          | 1            | 下拉型終端機                |
+
+
+
+### 藍芽
+```bash=
+#%% {}
+sudo pacman -S bluez bluez-utils
+sudo systemctl enable bluetooth.service
+#%%
+```
+
+### 字體
+```bash=
+#%% {}
+sudo pacman -S noto-fonts-cjk noto-fonts-emoji    #亞洲字體、顏文字
 #%%
 ```
 
@@ -680,16 +698,15 @@ btrfs_allow=noatime,space_cache,compress,compress-force,datacow,nodatacow,datasu
 
 ### nvidia 後續
 ```bash=
-#%% {"GPU": "nvidia"}
+#%% {"GPU": "nvidia"} 
 # improve performanace
 echo '
 options nvidia-drm modeset=1
 options nvidia NVreg_UsePageAttributeTable=1
 ' | sudo tee -a /etc/modprobe.d/nvidia.conf
 #%%
-
 #%% {"GPU":"nvidia", "nvidia-power-save":["True","False"]} #%%
-#%% {"GPU":"nvidia", "nvidia-power-save":"True"}
+#%% {"GPU":"nvidia", "nvidia-power-save":"True"} 
 #筆電省電用
 echo '
 options nvidia NVreg_DynamicPowerManagement=0x02
@@ -726,7 +743,7 @@ sudo nano /etc/pacman.d/hooks/nvidia.hook
 
 ### Intel顯卡設定
 ```bash=
-#%% {"CPU":"intel"}
+#%% {"CPU":"intel"} 
 # 相關資訊請看 https://wiki.archlinux.org/title/Intel_graphics
 echo "\
 options i915 enable_guc=3   #硬體加速
