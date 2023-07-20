@@ -565,17 +565,17 @@ Server = http://archlinux.ccns.ncku.edu.tw/archlinux/$repo/os/$arch
 Server = https://mirror.archlinux.tw/ArchLinux/$repo/os/$arch
 
 ## Switzerland
-#Server = http://pkg.adfinis.com/archlinux/$repo/os/$arch
-#Server = https://pkg.adfinis.com/archlinux/$repo/os/$arch
-#Server = http://mirror.init7.net/archlinux/$repo/os/$arch
-#Server = https://mirror.init7.net/archlinux/$repo/os/$arch
-#Server = http://mirror.metanet.ch/archlinux/$repo/os/$arch
-#Server = https://mirror.metanet.ch/archlinux/$repo/os/$arch
-#Server = http://mirror.puzzle.ch/archlinux/$repo/os/$arch
-#Server = https://mirror.puzzle.ch/archlinux/$repo/os/$arch
-#Server = https://theswissbay.ch/archlinux/$repo/os/$arch
-#Server = https://mirror.ungleich.ch/mirror/packages/archlinux/$repo/os/$arch
-#Server = https://mirror.worldhotspot.org/archlinux/$repo/os/$arch
+Server = http://pkg.adfinis.com/archlinux/$repo/os/$arch
+Server = https://pkg.adfinis.com/archlinux/$repo/os/$arch
+Server = http://mirror.init7.net/archlinux/$repo/os/$arch
+Server = https://mirror.init7.net/archlinux/$repo/os/$arch
+Server = http://mirror.metanet.ch/archlinux/$repo/os/$arch
+Server = https://mirror.metanet.ch/archlinux/$repo/os/$arch
+Server = http://mirror.puzzle.ch/archlinux/$repo/os/$arch
+Server = https://mirror.puzzle.ch/archlinux/$repo/os/$arch
+Server = https://theswissbay.ch/archlinux/$repo/os/$arch
+Server = https://mirror.ungleich.ch/mirror/packages/archlinux/$repo/os/$arch
+Server = https://mirror.worldhotspot.org/archlinux/$repo/os/$arch
 ' | sudo tee -a /etc/pacman.d/mirrorlist.backup
 rankmirrors /etc/pacman.d/mirrorlist.backup | sudo tee /etc/pacman.d/mirrorlist
 
@@ -624,10 +624,12 @@ __GLX_VENDOR_LIBRARY_NAME=nvidia" | sudo tee -a /etc/profile
 ### KDE
 ```bash=
 #%% {}
-yay -S sddm-git                   #登入管理器
+yay -S sddm                   #登入管理器
 sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
-sudo pacman -S plasma                 #kde 桌面
-echo 'recommand: 5 13 14 15 19 20 23 38 54 64 111 128 136 145 148 158 175'
+sudo pacman -S plasma                 #kde 桌面(repository choose noto-font)
+echo 'recommand rank1: 7 16 17 18 22 23 27 44 62 72 124 142 151 162 165 176 195'
+echo 'recommand rank2: 54 85 119'
+echo 'recommand rank3: 20 39 53 65 77 145'
 sudo pacman -S kde-applications       #kde 搭配軟體
 #%%
 ```
