@@ -244,7 +244,7 @@ arch-chroot /mnt/root          #把新裝的系統掛為root
 ### 必要軟體
 ```bash=
 #%% {}
-pacman -S vi vim nano          #基礎文字編輯
+pacman -S vi vim neovim nano          #基礎文字編輯
 pacman -S networkmanager net-tools       #網路管理
 pacman -S dnsmasq              #netwokmanager可能需要
 pacman -S bash-completion      #bash自動補字
@@ -623,7 +623,8 @@ __GLX_VENDOR_LIBRARY_NAME=nvidia" | sudo tee -a /etc/profile
 ```
 ### KDE
 ```bash=
-#%% {}
+#%% {"Desktop":["KDE","i3","sway"]} #%%
+#%% {"Desktop":"KDE"}
 yay -S sddm                   #登入管理器
 sudo systemctl enable sddm.service    #啟動KDE登錄畫面引導
 sudo pacman -S plasma                 #kde 桌面(repository choose noto-font)
@@ -663,6 +664,50 @@ sudo pacman -S kde-applications       #kde 搭配軟體
 | 176  | spectacle        | 1            | 螢幕截圖軟體                |
 | 195  | yakuake          | 1            | 下拉型終端機                |
 
+
+### I3
+```bash=
+#%% {"Desktop":"i3"}
+sudo pacman -S i3-wm
+# 鎖屏
+sudo pacman -S i3lock-color xidlelock
+#%%
+```
+
+### sway
+```bash=
+#%% {"Desktop":"sway"}
+sudo pacman -S sway
+#%%
+```
+
+### I3 & sway
+```bash=
+#%% {"Desktop":["sway","i3"]}
+# tool bar
+sudo pacman -S polybar
+# application menu
+sudo pacman -S rofi
+# Network Manager小圖示
+sudo pacman -S network-manager-applet
+# 開起.desktop檔，用於設定開機自啓動
+sudo pacman -S dex
+# 雙螢幕
+sudo pacman -S xrandr arandr autorandr
+# 桌面背景
+sudo pacman -S nitrogen
+# 合成器
+sudo pacman -S picom
+# sudo in GUI(需要root權限的GUI軟體需要)
+yay -S polkit-dumb-agent-git
+# 終端
+sudo pacman -S alacritty
+# 螢幕亮度
+yay -S brightnessctl
+# 音量
+sudo pacman -S pavucontrol
+#%%
+```
 
 
 ### 藍芽
