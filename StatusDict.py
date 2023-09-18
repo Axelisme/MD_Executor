@@ -12,7 +12,14 @@ def load_dict(dictpath:str) -> dict:
 
     if isinstance(store_dict, dict):
         print(f"Load store dictionary:\n{store_dict}")
-        input("I have checked (enter to continue) ")
+        respond = input("Accept: (Y/n) ")
+        while respond.lower() not in ["y","n",""]:
+            respond = input("Unrecognized input, accept: (Y/n) ")
+        if respond.lower() == "n":
+            print("Ignore store dictionary")
+            store_dict = {}
+        else:
+            print("Accept store dictionary")
     else:
         store_dict = {}
 

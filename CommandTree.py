@@ -1,28 +1,72 @@
 import re
 import subprocess as sp
-from typing import Optional, List, Dict, Union, Any
+from typing import Optional, List, Dict
 
 class BaseCommandBlock:
-    start_pat = "#%*"
-    oper_pat = "[_A-Z]"
-    flag_pat = "[a-z]+(?:,[a-z]+)*"
-    cond_pat = "{.*}"
-    end_pat = "#@*|```"
+    level_pat = "(?P<level>#%+)"
+    oper_pat = "(?P<oper>[A-Z])"
+    flag_pat = "(?P<flag>(?:[a-z]+,?)+)"
+    cond_pat = "(?P<cond>{.*})"
+    bash_start_pat = "(?P<bash_start>```bash=?)"
+    bash_end_pat = "(?P<bash_end>```)"
+    end_pat = "(?P<end>#@+)"
     head_pat = re.compile(
-        f"^(?:```bash=?\s*)?(?P<start>{start_pat})(?P<oper>{oper_pat}):\s*(?P<flag>{flag_pat})?\s+(?P<cond>{cond_pat})\s*(?P<end>{end_pat})?\s*$"
+        f"^{bash_start_pat}?\s*{level_pat}{oper_pat}:?{flag_pat}?\s+{cond_pat}\s*{end_pat}?\s*$"
     )
-    tail_pat = re.compile(f"^(?P<end>{end_pat})\s*$")
+    tail_pat = re.compile(f"^(?:{end_pat}|{bash_end_pat})\s*$")
 
-    _register_block:Dict[str,"BaseCommandBlock"] = {"_":"BaseCommandBlock"}
+    _register_block:Dict[str,"BaseCommandBlock"] = {}
+    _args_flags = {}
 
     @classmethod
-    def register_block(cls, oper:str, block:"BaseCommandBlock") -> None:
-        cls._register_block[oper] = block
+    def register_block(cls, oper:str):
+        BaseCommandBlock._register_block[oper] = cls
 
-    def __init__(self, head:Dict[str,str], line_iter:iter) -> None:
-        self.level = len(head["start"]) - 1
+    @staticmethod
+    def register(operation:str):
+        def decorator(class_):
+            class_.register_block(operation)
+            return class_
+        return decorator
 
-        self.operation = head["oper"]
+    @classmethod
+    def set_args_flags(cls, flags):
+        cls._args_flags.update(flags)
+
+    @classmethod
+    def _parse_head(cls, line:str) -> Optional[Dict[str,str|None]]:
+        match = cls.head_pat.fullmatch(line)
+        return match.groupdict() if match else None
+
+    @classmethod
+    def _parse_tail(cls, line:str) -> Optional[Dict[str,str|None]]:
+        match = cls.tail_pat.fullmatch(line)
+        return match.groupdict() if match else None
+
+    @classmethod
+    def get_block(cls, head:Dict[str,str|None], line_iter:iter) -> "BaseCommandBlock":
+        BlockClass = cls._register_block.get(head["oper"])
+        if BlockClass is None:
+            raise ValueError(f"Unknown operation: {head['oper']}")
+
+        block:BaseCommandBlock = BlockClass(head)
+        block.parse_content(line_iter)
+
+        return block
+
+    @classmethod
+    def as_block(cls, lines:List[str]) -> "BaseCommandBlock":
+        presudo_head = {"level":"#","flag":"n","cond":"{}"}
+
+        presudo_block = BaseCommandBlock(presudo_head)
+        presudo_block.parse_content(enumerate(lines, start=1))
+
+        return presudo_block
+
+    def __init__(self, head:Dict[str,str|None]):
+        self.bash_start = head.get("bash_start")
+
+        self.level = len(head["level"]) - 1
 
         self.oper_flag = head["flag"]
         self.oper_flag = self.oper_flag.split(",") if self.oper_flag else []
@@ -31,104 +75,96 @@ class BaseCommandBlock:
         self.condition = eval(head["cond"])
         assert isinstance(self.condition, dict), f"expect condition be a dict but get {self.condition}"
 
-        if end := head.get("end"):
-            assert end != "```", "Invalid Syntax: Cannot use ``` in one line mode."
+        self.end = head.get("end")
+        if self.end:
+            end_level = len(self.end) - 1
+            if self.level != end_level:
+                print(f"current level is mismatched with end level, {self.level} != {end_level}")
+                raise ValueError("Invalid end")
 
-            end_level = len(end) - 1
-            assert self.level == end_level, \
-                f"start level is mismatched with end level, {self.level} != {end_level}"
-            self.content = []
-        else:
-            self.content = self._parse_content(line_iter)
+        self.content = []
 
-    @classmethod
-    def _parse_head(cls, line:str) -> Optional[Dict[str,Any]]:
-        match = cls.head_pat.fullmatch(line)
-        return match.groupdict() if match else None
+    def parse_content(self, line_iter:iter):
+        if self.end:
+            return None
 
-    @classmethod
-    def _parse_tail(cls, line:str) -> Optional[Dict[str,Any]]:
-        match = cls.tail_pat.fullmatch(line)
-        return match.groupdict() if match else None
-
-    def _parse_content(self, line_iter:iter) -> List[Union[str,"BaseCommandBlock"]]:
         command_buffer = ""
-        content = []
-
-        def pack_command() -> None:
+        def pack_command():
             nonlocal command_buffer
             if command_buffer:
-                content.append(command_buffer)
+                self.content.append(command_buffer)
                 command_buffer = ""
 
-        for line in line_iter:
-            if (match := self._parse_head(line)) is not None:
+        for id, line in line_iter:
+            if head := type(self)._parse_head(line):
                 pack_command()
-                sub_level = len(match["start"]) - 1
-                assert self.level + 1 == sub_level, \
-                    f"current level: {self.level}, sub level: {sub_level}"
-                BlockClass = self._register_block.get(match["oper"])
-                if BlockClass is None:
-                    raise ValueError(f"Unknown operation: {match['oper']}")
-                content.append(eval(BlockClass)(match, line_iter))
-
-            elif (match := self._parse_tail(line)) is not None:
+                block = type(self).get_block(head, line_iter)
+                if self.level + 1 != block.level:
+                    print(f"line {id}")
+                    print(line)
+                    print(
+                        f"current level is mismatched with sub level, {self.level} + 1 != {block.level}"
+                    )
+                    raise ValueError("Invalid start")
+                self.content.append(block)
+            elif tail := self._parse_tail(line):
+                if tail["bash_end"] and self.bash_start is None:
+                    continue
                 pack_command()
-                if match["end"] != "```":
-                    end_level = len(match["end"]) - 1
-                    assert self.level == end_level, \
-                        f"start level is mismatched with end level, {self.level} != {end_level}"
+                if tail["end"]:
+                    end_level = len(tail["end"]) - 1
+                    if self.level != end_level:
+                        print(f"line {id}")
+                        print(line)
+                        print(
+                            f"start level is mismatched with end level, {self.level} != {end_level}"
+                        )
+                        raise ValueError("Invalid end")
                 break
-
             else:
                 command_buffer += line
+        else:
+            if self.level != 0:
+                raise ValueError("Cannot find end of block")
 
-        pack_command()
-
-        return content
-
-    def _operate(self, data_dict:dict) -> bool:
+    def _operate(self, setup:Dict[str,str|List[str]]) -> bool:
         return True
 
     def check_flag(self) -> bool:
         valid = ["n", "c"]
         return all(flag in valid for flag in self.oper_flag)
 
-    def _exec_command(self, commands:str, data_dict:dict) -> None:
+    def _exec_command(self, commands:str, setup:Dict[str,str|List[str]]) -> None:
         if "n" in self.oper_flag:
             return
-        formatted_command:str = commands.format(**data_dict)
+        formatted_command:str = commands.format(**setup)
         if "c" in self.oper_flag:
             print("\n\n"+">"*50+"\nCommand to run:")
             print(formatted_command,end='')
             print("<"*50)
             input("(Enter to run) ")
-        sp.run(formatted_command,shell=True,check=True).check_returncode()
+        if self._args_flags.get("dry_run"):
+            print(formatted_command)
+        else:
+            sp.run(formatted_command,shell=True,check=True).check_returncode()
 
-    def run(self, data_dict:dict) -> None:
-        if self._operate(data_dict):
+    def run(self, setup:Dict[str,str|List[str]]) -> None:
+        if self._operate(setup):
             for content in self.content:
                 if isinstance(content, BaseCommandBlock):
-                    content.run(data_dict)
+                    content.run(setup)
                 else:
-                    self._exec_command(content, data_dict)
+                    self._exec_command(content, setup)
 
-
+@BaseCommandBlock.register("A")
 class AddBlock(BaseCommandBlock):
-    BaseCommandBlock.register_block("A", "AddBlock")
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.operation = "A"
-
     def _operate(self, data_dict:dict) -> bool:
         if "s" in self.oper_flag:
             data_dict.update(self.condition)
             return True
 
         for key, value in self.condition.items():
-            if key in data_dict:
+            if key in data_dict and "f" not in self.oper_flag:
                 continue
             if isinstance(value, list):
                 if "m" in self.oper_flag:
@@ -143,7 +179,7 @@ class AddBlock(BaseCommandBlock):
         return True
 
     def check_flag(self) -> bool:
-        valid = ["s","m","n"]
+        valid = ["s","m","n","f"]
         return all(flag in valid for flag in self.oper_flag)
 
     def user_choose_one(self, key:str, value:List[str], data_dict:dict) -> str:
@@ -192,18 +228,11 @@ class AddBlock(BaseCommandBlock):
 
         return respond
 
-
+@BaseCommandBlock.register("Q")
 class QueryBlock(BaseCommandBlock):
-    BaseCommandBlock.register_block("Q", "QueryBlock")
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.operation = "Q"
-
-    def _operate(self, data_dict:dict) -> bool:
+    def _operate(self, setup:Dict[str,str|List[str]]) -> bool:
         for key, cond_value in self.condition.items():
-            data_value = data_dict.get(key)
+            data_value = setup.get(key)
             if data_value is None:
                 raise ValueError(f"Unknown key: {key}")
 
@@ -273,16 +302,15 @@ class QueryBlock(BaseCommandBlock):
 
 
 class CommandTree:
-    def __init__(self, filepath:str):
+    def __init__(self, filepath:str, **kwargs) -> None:
         self.filepath = filepath
 
-        base_head = BaseCommandBlock._parse_head("#_:n {}")
+        BaseCommandBlock.set_args_flags(kwargs)
 
         with open(filepath,'r',encoding="utf-8") as exec_fh:
             lines = exec_fh.readlines()
-            lines = [line for line in lines if line != "\n"] + ["#\n"]
 
-        self._root = BaseCommandBlock(base_head, iter(lines))
+        self._root = BaseCommandBlock.as_block(lines)
 
-    def run(self, data_dict:dict) -> None:
-        self._root.run(data_dict)
+    def run(self, setup:Dict[str,str|List[str]]) -> None:
+        self._root.run(setup)

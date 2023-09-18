@@ -9,7 +9,7 @@ from StatusDict import load_dict, dump_dict
 
 def main(args):
     # create command tree
-    command_tree = CommandTree(args.filepath)
+    command_tree = CommandTree(**vars(args))
 
     # load from dict file
     store_dict = load_dict(args.dict)
@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser = ArgumentParser(description="A python script for runnig command from markdown file")
     parser.add_argument("-f","--filepath",help="the path of markdown file")
     parser.add_argument("-d","--dict",help="the path of dict file", default="data/dict.json")
+    parser.add_argument("--dry-run",help="dry run",action="store_true")
 
     args = parser.parse_args()
 
