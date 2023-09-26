@@ -70,6 +70,8 @@ class BaseCommandBlock:
 
         self.oper_flag = head["flag"]
         self.oper_flag = self.oper_flag.split(",") if self.oper_flag else []
+        if not hasattr(self, "valid"):
+            self.valid = ["n", "c", "d"]
         assert self.check_flag(), f"Invalid flag: {self.oper_flag}"
 
         self.condition = eval(head["cond"])
@@ -131,18 +133,38 @@ class BaseCommandBlock:
         return True
 
     def check_flag(self) -> bool:
-        valid = ["n", "c"]
-        return all(flag in valid for flag in self.oper_flag)
+        return all(flag in self.valid for flag in self.oper_flag)
+
+    def user_confirm(self, question:Optional[str] = None, default:bool = True) -> bool:
+        selection = "Y/n" if default else "y/N"
+
+        if question is None:
+            question = f"Do you want to run this block? [{selection}] "
+        else:
+            question += f" [{selection}] "
+
+        while True:
+            respond = input(question)
+            if respond.lower() == "y":
+                return True
+            elif respond.lower() == "n":
+                return False
+            elif respond == "":
+                return default
+            else:
+                question = "Invalid input, enter again [{selection}] "
 
     def _exec_command(self, commands:str, setup:Dict[str,str|List[str]]) -> None:
         if "n" in self.oper_flag:
             return
-        formatted_command:str = commands.format(**setup)
+        formatted_command:str = commands if "d" in self.oper_flag else commands.format(**setup)
         if "c" in self.oper_flag:
             print("\n\n"+">"*50+"\nCommand to run:")
             print(formatted_command,end='')
             print("<"*50)
-            input("(Enter to run) ")
+            if not self.user_confirm("Do you want to run this command?"):
+                return
+
         if self._args_flags.get("dry_run"):
             print(formatted_command)
         else:
@@ -158,6 +180,10 @@ class BaseCommandBlock:
 
 @BaseCommandBlock.register("A")
 class AddBlock(BaseCommandBlock):
+    def __init__(self, head: Dict[str, str | None]):
+        self.valid = ["m", "c", "s", "f", "d"]
+        super().__init__(head)
+
     def _operate(self, data_dict:dict) -> bool:
         if "s" in self.oper_flag:
             data_dict.update(self.condition)
@@ -177,10 +203,6 @@ class AddBlock(BaseCommandBlock):
                 raise ValueError(f"Unsupported type of condition value: {value}")
 
         return True
-
-    def check_flag(self) -> bool:
-        valid = ["s","m","n","f"]
-        return all(flag in valid for flag in self.oper_flag)
 
     def user_choose_one(self, key:str, value:List[str], data_dict:dict) -> str:
         choose_num = len(value)
@@ -210,13 +232,17 @@ class AddBlock(BaseCommandBlock):
             print(f"{i}) {name}")
         print('-'*30)
 
-        respond = input(f"From 0 to {choose_num-1}, default is all: ")
+        respond = input(f"From -1 to {choose_num-1}, default is all, -1 is None: ")
         if not respond:
             respond = ' '.join(map(str,range(0,choose_num)))
+        elif respond == '-1':
+            return []
         while not all(map(lambda x: x.isdigit() and int(x) in range(0,choose_num), respond.split())):
             respond = input("Invalid input, please enter again: ")
             if not respond:
                 respond = ' '.join(map(str,range(0,choose_num)))
+            elif respond == '-1':
+                return []
 
         return [value[int(i)] for i in respond.split()]
 
@@ -230,6 +256,10 @@ class AddBlock(BaseCommandBlock):
 
 @BaseCommandBlock.register("Q")
 class QueryBlock(BaseCommandBlock):
+    def __init__(self, head: Dict[str, str | None]):
+        self.valid = ["n", "c", "kor", "vor", "d"]
+        super().__init__(head)
+
     def _operate(self, setup:Dict[str,str|List[str]]) -> bool:
         for key, cond_value in self.condition.items():
             data_value = setup.get(key)
@@ -295,10 +325,6 @@ class QueryBlock(BaseCommandBlock):
                 if not self._one_to_many_match(cond_value, data_values):
                     return False
             return True
-
-    def check_flag(self) -> bool:
-        valid = ["n", "c", "vor", "kor"]
-        return all(flag in valid for flag in self.oper_flag)
 
 
 class CommandTree:
