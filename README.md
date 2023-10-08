@@ -3,7 +3,7 @@
 ## Run
 run the script like:
 ```bash=
-./arch_setup.py -f $path_to_install_guide [-d $dict_path] [--dry-run]
+./md_executor.py -f $path_to_install_guide [-d $dict_path] [--dry-run]
 ```
 
 ## Grammar
